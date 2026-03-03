@@ -1,0 +1,218 @@
+---
+title: 'Like/Unlike Articles'
+description: 'Like or unlike news articles and recipes'
+---
+
+## Like an Article
+
+Add a like to an article. Requires authentication.
+
+### Endpoint
+
+```
+POST /insights/news/:id/like
+```
+
+### Authentication
+
+Requires valid access token (Bearer authentication).
+
+### Path Parameters
+
+<ParamField path="id" type="integer" required>
+  Article ID to like
+</ParamField>
+
+### Response
+
+<ResponseField name="success" type="boolean">
+  Always `true` for successful requests
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  Updated article like information
+  
+  <Expandable title="Like data">
+    <ResponseField name="articleId" type="integer">
+      The article ID
+    </ResponseField>
+    
+    <ResponseField name="likes" type="integer">
+      Updated total like count
+    </ResponseField>
+    
+    <ResponseField name="userLiked" type="boolean">
+      Whether the current user has liked this article (always `true` after liking)
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Example Request
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST https://api.ceboelha.com/insights/news/42/like \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+```javascript JavaScript
+const articleId = 42;
+
+const response = await fetch(`https://api.ceboelha.com/insights/news/${articleId}/like`, {
+  method: 'POST',
+  headers: {
+    'Authorization': `Bearer ${accessToken}`
+  }
+});
+
+const result = await response.json();
+console.log('Likes:', result.data.likes);
+```
+
+```python Python
+import requests
+
+article_id = 42
+
+response = requests.post(
+    f'https://api.ceboelha.com/insights/news/{article_id}/like',
+    headers={'Authorization': f'Bearer {access_token}'}
+)
+
+data = response.json()
+```
+
+</CodeGroup>
+
+### Example Response
+
+```json
+{
+  "success": true,
+  "data": {
+    "articleId": 42,
+    "likes": 156,
+    "userLiked": true
+  }
+}
+```
+
+---
+
+## Unlike an Article
+
+Remove your like from an article. Requires authentication.
+
+### Endpoint
+
+```
+DELETE /insights/news/:id/like
+```
+
+### Authentication
+
+Requires valid access token (Bearer authentication).
+
+### Path Parameters
+
+<ParamField path="id" type="integer" required>
+  Article ID to unlike
+</ParamField>
+
+### Response
+
+<ResponseField name="success" type="boolean">
+  Always `true` for successful requests
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  Updated article like information
+  
+  <Expandable title="Like data">
+    <ResponseField name="articleId" type="integer">
+      The article ID
+    </ResponseField>
+    
+    <ResponseField name="likes" type="integer">
+      Updated total like count
+    </ResponseField>
+    
+    <ResponseField name="userLiked" type="boolean">
+      Whether the current user has liked this article (always `false` after unliking)
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Example Request
+
+<CodeGroup>
+
+```bash cURL
+curl -X DELETE https://api.ceboelha.com/insights/news/42/like \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+```javascript JavaScript
+const articleId = 42;
+
+const response = await fetch(`https://api.ceboelha.com/insights/news/${articleId}/like`, {
+  method: 'DELETE',
+  headers: {
+    'Authorization': `Bearer ${accessToken}`
+  }
+});
+
+const result = await response.json();
+console.log('Likes:', result.data.likes);
+```
+
+```python Python
+import requests
+
+article_id = 42
+
+response = requests.delete(
+    f'https://api.ceboelha.com/insights/news/{article_id}/like',
+    headers={'Authorization': f'Bearer {access_token}'}
+)
+
+data = response.json()
+```
+
+</CodeGroup>
+
+### Example Response
+
+```json
+{
+  "success": true,
+  "data": {
+    "articleId": 42,
+    "likes": 155,
+    "userLiked": false
+  }
+}
+```
+
+## Error Responses
+
+<ResponseField name="401 Unauthorized">
+  Invalid or expired access token
+</ResponseField>
+
+<ResponseField name="404 Not Found">
+  Article ID not found
+</ResponseField>
+
+<ResponseField name="409 Conflict">
+  When trying to like an article you've already liked, or unlike an article you haven't liked
+</ResponseField>
+
+## Notes
+
+- Users can only like an article once
+- Liking an article you've already liked returns a 409 Conflict error
+- Unliking an article you haven't liked returns a 409 Conflict error
+- Like counts are updated in real-time
+- Authentication is required to prevent abuse

@@ -1,0 +1,222 @@
+---
+title: 'Manage Sessions'
+description: 'List and revoke active authentication sessions'
+---
+
+## List Active Sessions
+
+Get all active sessions for the authenticated user.
+
+### Endpoint
+
+```
+GET /auth/sessions
+```
+
+### Authentication
+
+Requires valid access token (Bearer authentication).
+
+### Response
+
+<ResponseField name="success" type="boolean">
+  Always `true` for successful requests
+</ResponseField>
+
+<ResponseField name="data" type="array">
+  Array of active session objects
+  
+  <Expandable title="Session object">
+    <ResponseField name="_id" type="string">
+      Session ID (MongoDB ObjectId)
+    </ResponseField>
+    
+    <ResponseField name="userId" type="string">
+      User ID who owns the session
+    </ResponseField>
+    
+    <ResponseField name="token" type="string">
+      Hashed refresh token (SHA-256)
+    </ResponseField>
+    
+    <ResponseField name="deviceInfo" type="object">
+      Information about the device
+      
+      <Expandable title="Device info">
+        <ResponseField name="ip" type="string">
+          IP address
+        </ResponseField>
+        
+        <ResponseField name="userAgent" type="string">
+          Browser/device user agent
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+    
+    <ResponseField name="expiresAt" type="string">
+      Session expiration timestamp (ISO 8601)
+    </ResponseField>
+    
+    <ResponseField name="createdAt" type="string">
+      Session creation timestamp (ISO 8601)
+    </ResponseField>
+    
+    <ResponseField name="lastUsedAt" type="string">
+      Last time session was used (ISO 8601)
+    </ResponseField>
+    
+    <ResponseField name="isRevoked" type="boolean">
+      Whether the session has been revoked
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Example Request
+
+<CodeGroup>
+
+```bash cURL
+curl -X GET https://api.ceboelha.com/auth/sessions \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+```javascript JavaScript
+const response = await fetch('https://api.ceboelha.com/auth/sessions', {
+  headers: {
+    'Authorization': `Bearer ${accessToken}`
+  }
+});
+
+const { data } = await response.json();
+console.log('Active sessions:', data);
+```
+
+```python Python
+import requests
+
+response = requests.get(
+    'https://api.ceboelha.com/auth/sessions',
+    headers={'Authorization': f'Bearer {access_token}'}
+)
+
+sessions = response.json()['data']
+```
+
+</CodeGroup>
+
+### Example Response
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "_id": "507f1f77bcf86cd799439011",
+      "userId": "507f191e810c19729de860ea",
+      "token": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "deviceInfo": {
+        "ip": "192.168.1.100",
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+      },
+      "expiresAt": "2026-03-10T14:30:00.000Z",
+      "createdAt": "2026-03-03T14:30:00.000Z",
+      "lastUsedAt": "2026-03-03T15:00:00.000Z",
+      "isRevoked": false
+    }
+  ]
+}
+```
+
+## Revoke Specific Session
+
+Revoke a specific session by ID, logging out that device.
+
+### Endpoint
+
+```
+DELETE /auth/sessions/:id
+```
+
+### Authentication
+
+Requires valid access token (Bearer authentication).
+
+### Path Parameters
+
+<ParamField path="id" type="string" required>
+  Session ID to revoke (MongoDB ObjectId)
+</ParamField>
+
+### Response
+
+<ResponseField name="success" type="boolean">
+  Always `true` for successful requests
+</ResponseField>
+
+<ResponseField name="message" type="string">
+  Success message
+</ResponseField>
+
+### Example Request
+
+<CodeGroup>
+
+```bash cURL
+curl -X DELETE https://api.ceboelha.com/auth/sessions/507f1f77bcf86cd799439011 \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+```javascript JavaScript
+const sessionId = '507f1f77bcf86cd799439011';
+
+const response = await fetch(`https://api.ceboelha.com/auth/sessions/${sessionId}`, {
+  method: 'DELETE',
+  headers: {
+    'Authorization': `Bearer ${accessToken}`
+  }
+});
+
+const result = await response.json();
+```
+
+```python Python
+import requests
+
+session_id = '507f1f77bcf86cd799439011'
+
+response = requests.delete(
+    f'https://api.ceboelha.com/auth/sessions/{session_id}',
+    headers={'Authorization': f'Bearer {access_token}'}
+)
+```
+
+</CodeGroup>
+
+### Example Response
+
+```json
+{
+  "success": true,
+  "message": "Sessão revogada com sucesso"
+}
+```
+
+## Error Responses
+
+<ResponseField name="401 Unauthorized">
+  Invalid or expired access token
+</ResponseField>
+
+<ResponseField name="403 Forbidden">
+  Attempting to revoke a session that doesn't belong to you
+</ResponseField>
+
+<ResponseField name="404 Not Found">
+  Session ID not found
+</ResponseField>
+
+## Use Cases
+
+- **Security audit**: View all devices where you're logged in
+- **Logout other devices**: Revoke sessions on lost or stolen devices
+- **Session management**: Track when and where you've been logged in

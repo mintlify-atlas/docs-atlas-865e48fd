@@ -64,7 +64,8 @@
               "api/auth/register",
               "api/auth/login",
               "api/auth/refresh-token",
-              "api/auth/logout"
+              "api/auth/logout",
+              "api/auth/sessions"
             ]
           },
           {
@@ -119,7 +120,8 @@
             "pages": [
               "api/news/list",
               "api/news/get-article",
-              "api/news/categories"
+              "api/news/categories",
+              "api/news/like-article"
             ]
           },
           {
