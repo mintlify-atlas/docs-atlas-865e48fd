@@ -1,0 +1,178 @@
+{
+  "projectType": "api-service",
+  "projectName": "Ceboelha API",
+  "projectDescription": "REST API for managing FODMAP diet and IBS symptoms tracking application",
+  "theme": "almond",
+  "primaryColor": "#8B5CF6",
+  "lightColor": "#A78BFA",
+  "darkColor": "#7C3AED",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Overview",
+            "pages": ["introduction", "quickstart"]
+          },
+          {
+            "group": "Getting Started",
+            "pages": [
+              "getting-started/installation",
+              "getting-started/configuration",
+              "getting-started/database-setup"
+            ]
+          },
+          {
+            "group": "Core Concepts",
+            "pages": [
+              "concepts/authentication",
+              "concepts/rate-limiting",
+              "concepts/error-handling"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "guides/user-management",
+              "guides/food-diary",
+              "guides/symptoms-tracking",
+              "guides/insights-analytics"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Authentication",
+            "pages": [
+              "api/auth/overview",
+              "api/auth/register",
+              "api/auth/login",
+              "api/auth/refresh-token",
+              "api/auth/logout"
+            ]
+          },
+          {
+            "group": "Profile",
+            "pages": [
+              "api/profile/get-profile",
+              "api/profile/update-profile",
+              "api/profile/change-email",
+              "api/profile/change-password",
+              "api/profile/diet-settings"
+            ]
+          },
+          {
+            "group": "Foods",
+            "pages": [
+              "api/foods/search-foods",
+              "api/foods/get-food",
+              "api/foods/categories",
+              "api/foods/filters"
+            ]
+          },
+          {
+            "group": "Diary",
+            "pages": [
+              "api/diary/list-entries",
+              "api/diary/create-meal",
+              "api/diary/create-symptom",
+              "api/diary/update-entry",
+              "api/diary/delete-entry",
+              "api/diary/day-summary",
+              "api/diary/month-summary"
+            ]
+          },
+          {
+            "group": "Problematic Foods",
+            "pages": [
+              "api/problematic-foods/list",
+              "api/problematic-foods/mark-as-bad",
+              "api/problematic-foods/remove"
+            ]
+          },
+          {
+            "group": "Insights",
+            "pages": [
+              "api/insights/highlights",
+              "api/insights/weekly-summary",
+              "api/insights/discoveries"
+            ]
+          },
+          {
+            "group": "News & Content",
+            "pages": [
+              "api/news/list",
+              "api/news/get-article",
+              "api/news/categories"
+            ]
+          },
+          {
+            "group": "Achievements",
+            "pages": [
+              "api/achievements/list",
+              "api/achievements/user-progress"
+            ]
+          },
+          {
+            "group": "Admin",
+            "pages": [
+              "api/admin/overview",
+              "api/admin/users",
+              "api/admin/system-settings"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Resources",
+        "groups": [
+          {
+            "group": "Additional Resources",
+            "pages": [
+              "resources/deployment",
+              "resources/security",
+              "resources/contributing",
+              "resources/changelog"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "JWT-based authentication with refresh token rotation",
+    "FODMAP food database with nutrition information",
+    "Food diary with meal and symptom tracking",
+    "Pattern recognition and insights analytics",
+    "Gamification with achievements system",
+    "Rate limiting and security headers",
+    "MongoDB integration with Mongoose",
+    "OpenAPI/Swagger documentation",
+    "Admin dashboard for user management"
+  ],
+  "publicApiSurface": [
+    "POST /api/auth/register",
+    "POST /api/auth/login",
+    "POST /api/auth/refresh",
+    "POST /api/auth/logout",
+    "GET /api/profile",
+    "PATCH /api/profile",
+    "GET /api/foods",
+    "GET /api/foods/:id",
+    "GET /api/diary",
+    "POST /api/diary/meal",
+    "POST /api/diary/symptom",
+    "GET /api/problematic-foods",
+    "POST /api/problematic-foods",
+    "GET /api/insights/highlights",
+    "GET /api/insights/weekly-summary",
+    "GET /api/insights/discoveries",
+    "GET /api/news",
+    "GET /api/achievements",
+    "GET /api/admin/users"
+  ]
+}
