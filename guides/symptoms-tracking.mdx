@@ -1,0 +1,353 @@
+---
+title: Symptoms Tracking
+description: Track IBS symptoms, identify patterns, and correlate with food intake
+---
+
+Symptom tracking is essential for identifying food triggers and understanding your body's reactions. This guide covers all aspects of symptom logging and analysis.
+
+## Understanding Symptoms
+
+The Ceboelha API supports tracking 11 common IBS symptoms:
+
+- `bloating` - Inchaço/Distensão abdominal
+- `gas` - Gases
+- `cramps` - Cólicas/Dor abdominal
+- `nausea` - Náusea
+- `diarrhea` - Diarreia
+- `constipation` - Constipação/Prisão de ventre
+- `reflux` - Refluxo/Azia
+- `fatigue` - Fadiga
+- `headache` - Dor de cabeça
+- `brain_fog` - Névoa mental
+- `other` - Outros sintomas
+
+## Logging Symptoms
+
+Record symptoms as they occur with intensity and timing.
+
+<Steps>
+  <Step title="Record the symptom">
+    Send a POST request with symptom details:
+
+    ```bash
+    curl -X POST https://api.ceboelha.com/diary/symptom \
+      --cookie "ceboelha_access_token=..." \
+      -H "Content-Type: application/json" \
+      -d '{
+        "date": "2026-03-03",
+        "symptom": {
+          "type": "bloating",
+          "intensity": 4,
+          "time": "15:30",
+          "duration": 120,
+          "notes": "Começou 2 horas depois do almoço"
+        }
+      }'
+    ```
+
+    **Required fields:**
+    - `date`: Date when symptom occurred (YYYY-MM-DD)
+    - `symptom.type`: Type of symptom
+    - `symptom.intensity`: Severity from 1-5
+    - `symptom.time`: When it started (HH:MM)
+
+    **Optional fields:**
+    - `duration`: How long it lasted (in minutes)
+    - `notes`: Additional context or observations
+  </Step>
+
+  <Step title="Understand intensity levels">
+    Use this scale to rate symptoms:
+
+    - **1** - Muito leve (barely noticeable)
+    - **2** - Leve (mild discomfort)
+    - **3** - Moderado (noticeable, affects daily activities)
+    - **4** - Forte (significant discomfort)
+    - **5** - Muito forte (severe, debilitating)
+  </Step>
+
+  <Step title="Receive confirmation">
+    ```json
+    {
+      "success": true,
+      "data": {
+        "_id": "507f1f77bcf86cd799439012",
+        "userId": "507f191e810c19729de860ea",
+        "type": "symptom",
+        "date": "2026-03-03",
+        "symptom": {
+          "type": "bloating",
+          "intensity": 4,
+          "time": "15:30",
+          "duration": 120,
+          "notes": "Começou 2 horas depois do almoço"
+        },
+        "createdAt": "2026-03-03T15:35:00.000Z"
+      }
+    }
+    ```
+  </Step>
+</Steps>
+
+## Logging Multiple Symptoms
+
+If you experience multiple symptoms simultaneously, log each one separately:
+
+```bash
+# Log bloating
+curl -X POST https://api.ceboelha.com/diary/symptom \
+  --cookie "ceboelha_access_token=..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "date": "2026-03-03",
+    "symptom": {
+      "type": "bloating",
+      "intensity": 4,
+      "time": "15:30"
+    }
+  }'
+
+# Log cramps
+curl -X POST https://api.ceboelha.com/diary/symptom \
+  --cookie "ceboelha_access_token=..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "date": "2026-03-03",
+    "symptom": {
+      "type": "cramps",
+      "intensity": 3,
+      "time": "15:30"
+    }
+  }'
+```
+
+<Tip>
+  Logging each symptom separately allows the API to better analyze patterns and correlations with specific foods.
+</Tip>
+
+## Symptoms Overview
+
+Get comprehensive symptom statistics and trends:
+
+```bash
+curl "https://api.ceboelha.com/diary/symptoms/overview?days=30" \
+  --cookie "ceboelha_access_token=..."
+```
+
+**Response includes:**
+- Total symptoms in the period
+- Average intensity
+- Most frequent symptom types
+- Daily trends
+- Correlations with foods
+
+```json
+{
+  "success": true,
+  "data": {
+    "period": {
+      "days": 30,
+      "startDate": "2026-02-02",
+      "endDate": "2026-03-03"
+    },
+    "totalSymptoms": 45,
+    "averageIntensity": 2.8,
+    "mostFrequent": [
+      {
+        "type": "bloating",
+        "count": 18,
+        "averageIntensity": 3.2
+      },
+      {
+        "type": "gas",
+        "count": 12,
+        "averageIntensity": 2.5
+      },
+      {
+        "type": "cramps",
+        "count": 8,
+        "averageIntensity": 3.8
+      }
+    ],
+    "dailyTrends": [
+      {
+        "date": "2026-03-03",
+        "count": 2,
+        "averageIntensity": 3.5
+      }
+    ],
+    "foodCorrelations": [
+      {
+        "foodId": 9012,
+        "foodName": "Leite integral",
+        "symptomsTriggered": 8,
+        "mostCommonSymptom": "bloating"
+      }
+    ]
+  }
+}
+```
+
+<Tip>
+  Use the `days` parameter to customize the analysis period. Default is 30 days. Longer periods (60-90 days) provide more reliable pattern detection.
+</Tip>
+
+## Filtering Symptom Entries
+
+Retrieve only symptom entries from your diary:
+
+```bash
+curl "https://api.ceboelha.com/diary?type=symptom" \
+  --cookie "ceboelha_access_token=..."
+```
+
+Filter by date range:
+
+```bash
+curl "https://api.ceboelha.com/diary?type=symptom&startDate=2026-03-01&endDate=2026-03-07" \
+  --cookie "ceboelha_access_token=..."
+```
+
+## Updating Symptom Entries
+
+If you need to correct symptom details:
+
+```bash
+curl -X PATCH https://api.ceboelha.com/diary/507f1f77bcf86cd799439012 \
+  --cookie "ceboelha_access_token=..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "symptom": {
+      "intensity": 3,
+      "duration": 90,
+      "notes": "Melhorou depois de 1h30"
+    }
+  }'
+```
+
+## Deleting Symptom Entries
+
+Remove incorrect or duplicate symptom logs:
+
+```bash
+curl -X DELETE https://api.ceboelha.com/diary/507f1f77bcf86cd799439012 \
+  --cookie "ceboelha_access_token=..."
+```
+
+## Identifying Problematic Foods
+
+When you log symptoms, the API automatically analyzes temporal correlation with your meals.
+
+<Steps>
+  <Step title="Log your meals">
+    Record all foods consumed throughout the day.
+  </Step>
+
+  <Step title="Log symptoms when they occur">
+    Note the time and intensity of each symptom.
+  </Step>
+
+  <Step title="Check insights">
+    The API analyzes the timing between meals and symptoms to identify potential triggers:
+
+    ```bash
+    curl https://api.ceboelha.com/insights/discoveries \
+      --cookie "ceboelha_access_token=..."
+    ```
+
+    This returns discovered patterns including:
+    - Foods that frequently precede symptoms
+    - Time windows when symptoms occur
+    - Food combinations that correlate with symptoms
+  </Step>
+
+  <Step title="Mark confirmed triggers">
+    If you identify a trigger, mark it as problematic:
+
+    ```bash
+    curl -X POST https://api.ceboelha.com/problematic-foods \
+      --cookie "ceboelha_access_token=..." \
+      -H "Content-Type: application/json" \
+      -d '{
+        "foodId": 9012,
+        "foodName": "Leite integral",
+        "status": "confirmed",
+        "symptomTypes": ["bloating", "cramps"],
+        "notes": "Sempre causa sintomas 2-3 horas depois"
+      }'
+    ```
+  </Step>
+</Steps>
+
+## Best Practices
+
+<Tip>
+  **Be specific with timing**: Record the exact time symptoms start. This helps correlate with meals eaten hours earlier.
+</Tip>
+
+<Tip>
+  **Track duration**: Recording how long symptoms last helps identify severity patterns and food trigger potency.
+</Tip>
+
+<Tip>
+  **Add context in notes**: Include factors like stress level, sleep quality, exercise, or medication that might influence symptoms.
+</Tip>
+
+<Note>
+  Symptoms can appear 2-6 hours after eating trigger foods. The API considers this delay when analyzing correlations.
+</Note>
+
+## Common Workflows
+
+### Elimination Phase Tracking
+
+During FODMAP elimination:
+
+1. Log all meals with detailed food information
+2. Record any symptoms, even mild ones
+3. Review weekly symptom trends to assess improvement
+4. Aim for consistent low-intensity symptoms before reintroduction
+
+### Reintroduction Phase Tracking
+
+When testing foods:
+
+1. Log the test food at breakfast or lunch
+2. Monitor for symptoms over the next 24 hours
+3. Log all symptoms with precise timing
+4. Compare symptom levels with baseline
+5. Use insights API to see if the food correlates with symptoms
+
+### Day-to-Day Symptom Monitoring
+
+For ongoing management:
+
+```bash
+# Check today's symptom count
+curl "https://api.ceboelha.com/diary/summary/day/2026-03-03" \
+  --cookie "ceboelha_access_token=..."
+
+# Review weekly trends
+curl "https://api.ceboelha.com/insights/weekly-summary" \
+  --cookie "ceboelha_access_token=..."
+
+# Identify new patterns
+curl "https://api.ceboelha.com/insights/discoveries" \
+  --cookie "ceboelha_access_token=..."
+```
+
+## Symptom Intensity Guidelines
+
+Use consistent intensity ratings:
+
+| Intensity | Description | Impact |
+|-----------|-------------|--------|
+| 1 | Muito leve | Barely noticeable, no impact on activities |
+| 2 | Leve | Noticeable but easy to ignore, minimal impact |
+| 3 | Moderado | Uncomfortable, affects concentration |
+| 4 | Forte | Significant discomfort, limits activities |
+| 5 | Muito forte | Severe pain/discomfort, unable to function normally |
+
+<Tip>
+  Consistent intensity ratings make it easier to compare symptoms over time and identify whether your overall symptom burden is improving.
+</Tip>

@@ -1,0 +1,344 @@
+---
+title: Security
+description: Security features and best practices for the Ceboelha API
+---
+
+The Ceboelha API implements multiple layers of security to protect user data and prevent abuse.
+
+## Authentication
+
+### JWT (JSON Web Tokens)
+
+The API uses a dual-token authentication system:
+
+<CardGroup cols={2}>
+  <Card title="Access Token" icon="key">
+    - Short-lived (15 minutes default)
+    - Used for authenticated requests
+    - Included in Authorization header
+    - Expires quickly for security
+  </Card>
+  
+  <Card title="Refresh Token" icon="rotate">
+    - Long-lived (7 days default)
+    - Used to obtain new access tokens
+    - Stored securely on client
+    - Rotated on each use
+  </Card>
+</CardGroup>
+
+### Token Usage
+
+**Making Authenticated Requests:**
+
+```bash
+curl -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  https://api.ceboelha.com/api/users/profile
+```
+
+**Refreshing Tokens:**
+
+When the access token expires, use the refresh token:
+
+```bash
+curl -X POST https://api.ceboelha.com/api/auth/refresh \
+  -H "Content-Type: application/json" \
+  -d '{"refreshToken": "YOUR_REFRESH_TOKEN"}'
+```
+
+### Token Security Features
+
+<Steps>
+  <Step title="Token Rotation">
+    Refresh tokens are rotated on each use. When you refresh, the old token is invalidated and a new pair is issued.
+  </Step>
+
+  <Step title="Reuse Detection">
+    If a revoked refresh token is reused, all tokens for that user are invalidated, requiring re-authentication.
+  </Step>
+
+  <Step title="Secure Secrets">
+    <Warning>
+      JWT secrets must be at least 32 characters. The API validates this on startup.
+    </Warning>
+
+    Generate secure secrets:
+    ```bash
+    openssl rand -hex 32
+    ```
+  </Step>
+</Steps>
+
+## Password Security
+
+### Bcrypt Hashing
+
+All passwords are hashed using bcrypt with configurable salt rounds:
+
+```bash
+# Production: 12 rounds (recommended)
+BCRYPT_SALT_ROUNDS=12
+
+# Development: 10 rounds (faster for testing)
+BCRYPT_SALT_ROUNDS=10
+```
+
+<Note>
+  Higher salt rounds = more secure but slower. 12 rounds is recommended for production, providing strong security while maintaining reasonable performance.
+</Note>
+
+### Account Lockout
+
+Protection against brute force attacks:
+
+- **Max Attempts**: 5 failed login attempts (configurable)
+- **Lockout Duration**: 15 minutes (900000ms)
+- **Per Account**: Lockout is account-specific, not IP-based
+
+Configuration:
+```bash
+MAX_LOGIN_ATTEMPTS=5
+LOCKOUT_DURATION=900000
+```
+
+## Rate Limiting
+
+Multiple rate limiting tiers protect against abuse:
+
+### Global Rate Limiting
+
+**Per-IP Across All Endpoints:**
+- 200 requests per minute total
+- Prevents a single IP from overwhelming the server
+
+### API Rate Limiting
+
+**General API Endpoints:**
+```bash
+RATE_LIMIT_MAX=100
+RATE_LIMIT_WINDOW=60000  # 1 minute
+```
+
+**Authentication Endpoints:**
+```bash
+AUTH_RATE_LIMIT_MAX=5
+AUTH_RATE_LIMIT_WINDOW=900000  # 15 minutes
+```
+
+**Sensitive Operations:**
+- Password changes, account deletion: 3 requests per 5 minutes
+
+**Admin Operations:**
+- General admin: 30 requests per minute
+- Write operations (create/update/delete): 10 requests per minute
+
+### Rate Limit Headers
+
+All responses include rate limit information:
+
+```http
+X-RateLimit-Limit: 100
+X-RateLimit-Remaining: 95
+X-RateLimit-Reset: 1709481600000
+```
+
+<Warning>
+  Rate limiting currently uses in-memory storage. For multi-instance deployments, upgrade to Redis-backed rate limiting to share limits across instances.
+</Warning>
+
+## CORS (Cross-Origin Resource Sharing)
+
+### Configuration
+
+CORS is configured to allow only specified origins:
+
+```bash
+# Single origin
+CORS_ORIGIN=https://app.ceboelha.com
+
+# Multiple origins (comma-separated)
+CORS_ORIGIN=https://app.ceboelha.com,https://ceboelha.com
+```
+
+### Allowed Methods
+
+- GET
+- POST
+- PUT
+- PATCH
+- DELETE
+- OPTIONS
+
+### Allowed Headers
+
+- Content-Type
+- Authorization
+- X-Requested-With
+
+### Credentials
+
+Credentials (cookies, authorization headers) are allowed for configured origins.
+
+## Security Headers
+
+The API automatically sets comprehensive security headers on all responses:
+
+### Standard Security Headers
+
+```http
+X-Frame-Options: DENY
+X-Content-Type-Options: nosniff
+X-XSS-Protection: 1; mode=block
+Referrer-Policy: strict-origin-when-cross-origin
+X-Powered-By: Ceboelha
+Permissions-Policy: camera=(), microphone=(), geolocation=()
+```
+
+### Content Security Policy (CSP)
+
+**API Routes (Strict):**
+```http
+Content-Security-Policy: default-src 'self'
+```
+
+**Documentation Routes (Relaxed for Swagger):**
+```http
+Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; ...
+```
+
+### HSTS (HTTP Strict Transport Security)
+
+<Warning>
+  HSTS is automatically enabled in production (`NODE_ENV=production`). Ensure you have valid SSL/TLS certificates before deploying.
+</Warning>
+
+In production:
+```http
+Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
+```
+
+## Docker Security
+
+### Non-Root User
+
+The Docker container runs as a non-root user for enhanced security:
+
+```dockerfile
+# Create non-root user
+RUN groupadd --system --gid 1001 nodejs && \
+    useradd --system --uid 1001 --gid nodejs bunjs
+
+# Switch to non-root user
+USER bunjs
+```
+
+### Minimal Image
+
+Multi-stage build ensures only necessary files are in production:
+
+- No dev dependencies
+- No build tools
+- Minimal attack surface
+
+## Best Practices
+
+### Environment Variables
+
+<Steps>
+  <Step title="Never Commit Secrets">
+    Never commit `.env` files or secrets to version control.
+  </Step>
+
+  <Step title="Use Strong Secrets">
+    Generate cryptographically secure random secrets:
+    ```bash
+    openssl rand -hex 32
+    ```
+  </Step>
+
+  <Step title="Rotate Regularly">
+    Rotate JWT secrets periodically (invalidates all existing tokens).
+  </Step>
+
+  <Step title="Use Different Secrets">
+    Access and refresh tokens must use different secrets.
+  </Step>
+</Steps>
+
+### Production Deployment
+
+<Warning>
+  Always use HTTPS in production. Configure a reverse proxy (nginx, Caddy) with valid SSL/TLS certificates.
+</Warning>
+
+- Set `NODE_ENV=production` to enable HSTS and production optimizations
+- Use environment-specific `.env` files
+- Configure firewall rules to restrict access
+- Use MongoDB authentication and encryption
+- Enable MongoDB TLS/SSL connections
+- Regularly update dependencies
+
+### Monitoring
+
+- Monitor failed authentication attempts
+- Track rate limit violations
+- Log security events
+- Set up alerts for suspicious activity
+- Monitor `/health` endpoint
+
+### Database Security
+
+- Use MongoDB authentication (never run without auth in production)
+- Use strong database passwords
+- Limit database user permissions (principle of least privilege)
+- Enable MongoDB access control
+- Use connection string with `authSource=admin`
+- Consider MongoDB TLS/SSL for connections
+- Regularly backup database
+
+### API Keys and Tokens
+
+- Store tokens securely on client (HttpOnly cookies for web)
+- Implement token refresh before expiration
+- Handle token expiration gracefully
+- Clear tokens on logout
+- Don't log tokens or secrets
+
+## Vulnerability Reporting
+
+If you discover a security vulnerability:
+
+1. **Do not** open a public GitHub issue
+2. Email security details to: [security@ceboelha.app](mailto:security@ceboelha.app)
+3. Include:
+   - Description of the vulnerability
+   - Steps to reproduce
+   - Potential impact
+   - Suggested fix (if any)
+
+<Note>
+  We appreciate responsible disclosure and will acknowledge your contribution in our security changelog.
+</Note>
+
+## Security Checklist
+
+Before deploying to production:
+
+- [ ] Strong JWT secrets (32+ characters) configured
+- [ ] `NODE_ENV=production` set
+- [ ] HTTPS configured with valid certificates
+- [ ] MongoDB authentication enabled
+- [ ] CORS origins properly configured
+- [ ] Rate limiting configured appropriately
+- [ ] `.env` file not committed to version control
+- [ ] Database backups scheduled
+- [ ] Monitoring and alerting configured
+- [ ] Security headers verified
+- [ ] Account lockout configured
+- [ ] Bcrypt salt rounds set to 12
+
+## Related Resources
+
+- [Deployment Guide](/resources/deployment) - Production deployment
+- [API Authentication](/concepts/authentication) - Authentication endpoints
+- [Environment Configuration](/resources/deployment#environment-configuration) - Environment setup

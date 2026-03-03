@@ -1,0 +1,218 @@
+---
+title: 'Get Article Categories & Tags'
+description: 'Get all available article categories and tags'
+---
+
+## Get All Tags
+
+Retrieve a list of all unique tags from published articles.
+
+### Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -X GET 'https://api.ceboelha.com/insights/news/tags' \
+  -H 'Content-Type: application/json'
+```
+
+```javascript JavaScript
+const response = await fetch('https://api.ceboelha.com/insights/news/tags', {
+  method: 'GET',
+  headers: {
+    'Content-Type': 'application/json'
+  }
+});
+
+const data = await response.json();
+```
+
+```python Python
+import requests
+
+response = requests.get('https://api.ceboelha.com/insights/news/tags')
+data = response.json()
+```
+</CodeGroup>
+
+### Response
+
+<ResponseField name="success" type="boolean" required>
+  Indicates if the request was successful
+</ResponseField>
+
+<ResponseField name="data" type="array" required>
+  Array of unique tag strings from all published articles
+</ResponseField>
+
+### Response Example
+
+```json
+{
+  "success": true,
+  "data": [
+    "low-fodmap",
+    "breakfast",
+    "IBS",
+    "digestive-health",
+    "recipes",
+    "meal-prep",
+    "gut-health",
+    "elimination-phase",
+    "reintroduction"
+  ]
+}
+```
+
+---
+
+## Get Featured Articles
+
+Retrieve featured articles for homepage display.
+
+### Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -X GET 'https://api.ceboelha.com/insights/news/featured?limit=3' \
+  -H 'Content-Type: application/json'
+```
+
+```javascript JavaScript
+const response = await fetch('https://api.ceboelha.com/insights/news/featured?limit=3', {
+  method: 'GET',
+  headers: {
+    'Content-Type': 'application/json'
+  }
+});
+
+const data = await response.json();
+```
+
+```python Python
+import requests
+
+response = requests.get(
+    'https://api.ceboelha.com/insights/news/featured',
+    params={'limit': 3}
+)
+
+data = response.json()
+```
+</CodeGroup>
+
+### Query Parameters
+
+<ParamField query="limit" type="integer" default="3">
+  Maximum number of featured articles to return
+</ParamField>
+
+### Response
+
+<ResponseField name="success" type="boolean" required>
+  Indicates if the request was successful
+</ResponseField>
+
+<ResponseField name="data" type="array" required>
+  Array of featured article objects (same structure as [List Articles](/api/news/list))
+</ResponseField>
+
+### Response Example
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": 1,
+      "title": "Low-FODMAP Breakfast Smoothie Bowl",
+      "excerpt": "Start your day with this delicious and gut-friendly smoothie bowl",
+      "image_url": "https://example.com/images/smoothie-bowl.jpg",
+      "category": "recipe",
+      "tags": ["breakfast", "low-fodmap", "smoothie"],
+      "featured": true,
+      "views": 1234,
+      "likes": 89
+    }
+  ]
+}
+```
+
+---
+
+## Get Recipes
+
+Retrieve only recipe articles.
+
+### Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -X GET 'https://api.ceboelha.com/insights/news/recipes?page=1&limit=10' \
+  -H 'Content-Type: application/json'
+```
+
+```javascript JavaScript
+const response = await fetch('https://api.ceboelha.com/insights/news/recipes?page=1&limit=10', {
+  method: 'GET',
+  headers: {
+    'Content-Type': 'application/json'
+  }
+});
+
+const data = await response.json();
+```
+
+```python Python
+import requests
+
+response = requests.get(
+    'https://api.ceboelha.com/insights/news/recipes',
+    params={'page': 1, 'limit': 10}
+)
+
+data = response.json()
+```
+</CodeGroup>
+
+### Query Parameters
+
+<ParamField query="page" type="integer" default="1">
+  Page number for pagination
+</ParamField>
+
+<ParamField query="limit" type="integer" default="10">
+  Number of recipes per page
+</ParamField>
+
+<ParamField query="tag" type="string">
+  Filter by tag (e.g., "breakfast", "dinner", "low-fodmap")
+</ParamField>
+
+<ParamField query="search" type="string">
+  Search query to filter recipes
+</ParamField>
+
+### Response
+
+Same structure as [List Articles](/api/news/list), but only returns articles where `category` is `"recipe"`.
+
+---
+
+## Available Categories
+
+The following categories are available for filtering:
+
+| Category | Description |
+|----------|-------------|
+| `recipe` | FODMAP-friendly recipes |
+| `article` | Educational articles about IBS and FODMAP |
+| `tip` | Quick tips and tricks for managing IBS |
+| `wellness` | General wellness and lifestyle content |
+| `news` | Latest news and research in digestive health |
+
+## Notes
+
+- All endpoints return only `published` articles
+- No authentication is required for these endpoints
+- Tags are case-sensitive
+- Featured articles are determined by the `isFeatured` flag set by admins

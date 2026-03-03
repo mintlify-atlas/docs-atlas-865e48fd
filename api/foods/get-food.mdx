@@ -1,0 +1,372 @@
+---
+title: 'Get Food by ID'
+description: 'Retrieve complete details of a specific food by its ID'
+---
+
+## Endpoint
+
+```
+GET /foods/:id
+```
+
+Retrieve complete information about a specific food using its numeric ID. This endpoint also increments the food's search count for analytics.
+
+## Path Parameters
+
+<ParamField path="id" type="integer" required>
+  The unique numeric ID of the food
+  
+  **Constraints:** Must be a positive integer (>= 1)
+  
+  **Example:** `/foods/1234`
+</ParamField>
+
+## Response
+
+<ResponseField name="success" type="boolean" required>
+  Indicates if the request was successful
+</ResponseField>
+
+<ResponseField name="data" type="object" required>
+  Complete food object
+  
+  <ResponseField name="id" type="integer" required>
+    Unique numeric food identifier
+  </ResponseField>
+  
+  <ResponseField name="name" type="string" required>
+    Food name
+  </ResponseField>
+  
+  <ResponseField name="source" type="string" required>
+    Data source: `nutritional_table`, `user_contributed`, or `ai_generated`
+  </ResponseField>
+  
+  <ResponseField name="category_level_1" type="string" required>
+    Main category (e.g., "Frutas", "Legumes", "Cereais")
+  </ResponseField>
+  
+  <ResponseField name="category_level_2" type="string">
+    Subcategory (level 2)
+  </ResponseField>
+  
+  <ResponseField name="category_level_3" type="string">
+    Sub-subcategory (level 3)
+  </ResponseField>
+  
+  <ResponseField name="image" type="string">
+    URL to food image (if available)
+  </ResponseField>
+  
+  <ResponseField name="fodmap" type="object">
+    FODMAP information (null if not available)
+    
+    <ResponseField name="level" type="string" required>
+      FODMAP level: `free`, `low`, `medium`, or `high`
+    </ResponseField>
+    
+    <ResponseField name="portion_note" type="string">
+      Portion-specific notes (e.g., "1/2 cup", "100g")
+    </ResponseField>
+    
+    <ResponseField name="additional_notes" type="string">
+      Additional FODMAP notes or warnings
+    </ResponseField>
+    
+    <ResponseField name="search_information" type="object" required>
+      Metadata about how FODMAP data was matched
+      
+      <ResponseField name="match_type" type="string" required>
+        Type of match: `single_ingredient` or `multiple_ingredients`
+      </ResponseField>
+      
+      <ResponseField name="category" type="string">
+        FODMAP category (for single ingredient)
+      </ResponseField>
+      
+      <ResponseField name="name_english" type="string">
+        English name from FODMAP database
+      </ResponseField>
+      
+      <ResponseField name="detected_keyword" type="string">
+        Keyword that triggered the FODMAP match
+      </ResponseField>
+      
+      <ResponseField name="total_ingredients" type="integer">
+        Number of ingredients (for multiple_ingredients match)
+      </ResponseField>
+      
+      <ResponseField name="ingredients" type="array">
+        Array of ingredient FODMAP data (for multiple_ingredients match)
+        
+        <ResponseField name="portuguese_keyword" type="string">
+          Portuguese keyword
+        </ResponseField>
+        
+        <ResponseField name="name_english" type="string">
+          English ingredient name
+        </ResponseField>
+        
+        <ResponseField name="level" type="string">
+          FODMAP level for this ingredient
+        </ResponseField>
+        
+        <ResponseField name="portion_note" type="string">
+          Portion note for this ingredient
+        </ResponseField>
+        
+        <ResponseField name="category" type="string">
+          FODMAP category
+        </ResponseField>
+      </ResponseField>
+    </ResponseField>
+  </ResponseField>
+  
+  <ResponseField name="nutrition" type="object">
+    Nutritional information (null if not available)
+    
+    <ResponseField name="energy_kcal" type="number" required>
+      Energy in kilocalories
+    </ResponseField>
+    
+    <ResponseField name="energy_kj" type="number" required>
+      Energy in kilojoules
+    </ResponseField>
+    
+    <ResponseField name="reference_portion" type="string" required>
+      Reference portion (typically "100g")
+    </ResponseField>
+    
+    <ResponseField name="macronutrients" type="object" required>
+      Complete macronutrient breakdown
+      
+      <ResponseField name="lipids_g" type="string" required>
+        Total fats in grams
+      </ResponseField>
+      
+      <ResponseField name="saturated_fatty_acids_g" type="string">
+        Saturated fats in grams
+      </ResponseField>
+      
+      <ResponseField name="monounsaturated_fatty_acids_g" type="string">
+        Monounsaturated fats in grams
+      </ResponseField>
+      
+      <ResponseField name="polyunsaturated_fatty_acids_g" type="string">
+        Polyunsaturated fats in grams
+      </ResponseField>
+      
+      <ResponseField name="linoleic_acid_g" type="string">
+        Linoleic acid in grams
+      </ResponseField>
+      
+      <ResponseField name="trans_fatty_acids_g" type="string">
+        Trans fats in grams
+      </ResponseField>
+      
+      <ResponseField name="cholesterol_mg" type="string">
+        Cholesterol in milligrams
+      </ResponseField>
+      
+      <ResponseField name="carbohydrates_g" type="string" required>
+        Total carbohydrates in grams
+      </ResponseField>
+      
+      <ResponseField name="sugars_g" type="string">
+        Sugars in grams
+      </ResponseField>
+      
+      <ResponseField name="oligosaccharides_g" type="string">
+        Oligosaccharides in grams
+      </ResponseField>
+      
+      <ResponseField name="starch_g" type="string">
+        Starch in grams
+      </ResponseField>
+      
+      <ResponseField name="protein_g" type="string" required>
+        Protein in grams
+      </ResponseField>
+      
+      <ResponseField name="fiber_g" type="string">
+        Dietary fiber in grams
+      </ResponseField>
+      
+      <ResponseField name="salt_g" type="string">
+        Salt in grams
+      </ResponseField>
+      
+      <ResponseField name="alcohol_g" type="string">
+        Alcohol in grams
+      </ResponseField>
+      
+      <ResponseField name="water_g" type="string">
+        Water content in grams
+      </ResponseField>
+      
+      <ResponseField name="organic_acids_g" type="string">
+        Organic acids in grams
+      </ResponseField>
+      
+      <ResponseField name="ash_g" type="string">
+        Ash content in grams
+      </ResponseField>
+    </ResponseField>
+    
+    <ResponseField name="vitamins" type="object">
+      Vitamin content as key-value pairs (e.g., `{"vitamin_c_mg": "10.5"}`)
+    </ResponseField>
+    
+    <ResponseField name="minerals" type="object">
+      Mineral content as key-value pairs (e.g., `{"calcium_mg": "120"}`)
+    </ResponseField>
+  </ResponseField>
+  
+  <ResponseField name="data_sources" type="object" required>
+    Information about data sources
+    
+    <ResponseField name="nutritional_data" type="string" required>
+      Source of nutritional data (e.g., "Portuguese Nutrition Table")
+    </ResponseField>
+    
+    <ResponseField name="fodmap_data" type="string">
+      Source of FODMAP data (e.g., "Monash University FODMAP Database")
+    </ResponseField>
+    
+    <ResponseField name="ai_generated" type="object">
+      AI generation metadata (if applicable)
+      
+      <ResponseField name="is_ai_generated" type="boolean" required>
+        Whether this food data was AI-generated
+      </ResponseField>
+      
+      <ResponseField name="ai_source" type="string">
+        AI model used (e.g., "GPT-4")
+      </ResponseField>
+      
+      <ResponseField name="fields_affected" type="array">
+        Array of field names that were AI-generated
+      </ResponseField>
+    </ResponseField>
+  </ResponseField>
+  
+  <ResponseField name="searchCount" type="integer" required>
+    Number of times this food has been searched (incremented by this request)
+  </ResponseField>
+  
+  <ResponseField name="createdAt" type="string" required>
+    ISO 8601 timestamp when the food was created
+  </ResponseField>
+  
+  <ResponseField name="updatedAt" type="string" required>
+    ISO 8601 timestamp when the food was last updated
+  </ResponseField>
+</ResponseField>
+
+## Examples
+
+### Get food by ID
+
+```bash
+curl "https://api.ceboelha.com/foods/1234"
+```
+
+## Response Example
+
+```json
+{
+  "success": true,
+  "data": {
+    "_id": "507f1f77bcf86cd799439011",
+    "id": 1234,
+    "name": "Abacate",
+    "source": "nutritional_table",
+    "category_level_1": "Frutas",
+    "category_level_2": "Frutas Frescas",
+    "category_level_3": "Frutas Tropicais",
+    "image": null,
+    "fodmap": {
+      "level": "low",
+      "portion_note": "1/8 unidade (20g)",
+      "additional_notes": "Porções maiores podem ser altas em FODMAPs",
+      "search_information": {
+        "match_type": "single_ingredient",
+        "category": "Fruits",
+        "name_english": "Avocado",
+        "detected_keyword": "abacate"
+      }
+    },
+    "nutrition": {
+      "energy_kcal": 160,
+      "energy_kj": 670,
+      "reference_portion": "100g",
+      "macronutrients": {
+        "lipids_g": "14.7",
+        "saturated_fatty_acids_g": "2.1",
+        "monounsaturated_fatty_acids_g": "9.8",
+        "polyunsaturated_fatty_acids_g": "1.8",
+        "linoleic_acid_g": "1.7",
+        "trans_fatty_acids_g": "0",
+        "cholesterol_mg": "0",
+        "carbohydrates_g": "8.5",
+        "sugars_g": "0.7",
+        "oligosaccharides_g": "0",
+        "starch_g": "0",
+        "protein_g": "2.0",
+        "fiber_g": "6.7",
+        "salt_g": "0.007",
+        "alcohol_g": "0",
+        "water_g": "73.2",
+        "organic_acids_g": "0",
+        "ash_g": "1.6"
+      },
+      "vitamins": {
+        "vitamin_c_mg": "10",
+        "vitamin_e_mg": "2.1"
+      },
+      "minerals": {
+        "potassium_mg": "485",
+        "magnesium_mg": "29"
+      }
+    },
+    "data_sources": {
+      "nutritional_data": "Portuguese Nutrition Table",
+      "fodmap_data": "Monash University FODMAP Database"
+    },
+    "searchCount": 327,
+    "createdAt": "2024-01-15T10:30:00.000Z",
+    "updatedAt": "2024-03-01T14:22:00.000Z"
+  }
+}
+```
+
+## Error Responses
+
+### 404 Not Found
+
+Returned when a food with the specified ID does not exist.
+
+```json
+{
+  "success": false,
+  "error": "Alimento não encontrado"
+}
+```
+
+### 400 Bad Request
+
+Returned when the ID parameter is invalid (not a positive integer).
+
+```json
+{
+  "success": false,
+  "error": "Invalid ID format"
+}
+```
+
+## Notes
+
+- This endpoint increments the `searchCount` field each time it's called (analytics)
+- The search count increment happens asynchronously and won't affect response time
+- Foods may have FODMAP data, nutrition data, both, or neither
+- The `fodmap.search_information` field provides transparency about how FODMAP data was matched

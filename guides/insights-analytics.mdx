@@ -1,0 +1,497 @@
+---
+title: Insights & Analytics
+description: Discover patterns, get personalized recommendations, and track your progress
+---
+
+The Insights API analyzes your diary data to provide actionable insights, identify food triggers, and track your progress over time.
+
+## Understanding Insights
+
+The API provides three types of insights:
+
+1. **Highlights** - Daily personalized tips and achievements
+2. **Weekly Summary** - Statistics and trends for the past 7 days
+3. **Discoveries** - Identified patterns and food correlations
+
+All insights are automatically generated based on your logged meals and symptoms.
+
+## Daily Highlights
+
+Get personalized daily insights and achievements:
+
+```bash
+curl https://api.ceboelha.com/insights/highlights \
+  --cookie "ceboelha_access_token=..."
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "type": "achievement",
+      "title": "7 Day Streak!",
+      "message": "You've logged meals for 7 days straight. Keep it up!",
+      "icon": "🔥",
+      "priority": 1
+    },
+    {
+      "type": "pattern",
+      "title": "Low Symptom Day",
+      "message": "Yesterday you had no symptoms. Great job!",
+      "icon": "✨",
+      "priority": 2
+    },
+    {
+      "type": "warning",
+      "title": "Trigger Alert",
+      "message": "You consumed 'Leite integral' which previously caused symptoms.",
+      "icon": "⚠️",
+      "priority": 1
+    },
+    {
+      "type": "tip",
+      "title": "Hydration Tip",
+      "message": "Drinking water between meals can help reduce bloating.",
+      "icon": "💧",
+      "priority": 3
+    }
+  ]
+}
+```
+
+**Highlight types:**
+
+- `achievement` - Milestones and accomplishments
+- `pattern` - Trends identified in your data
+- `warning` - Alerts about problematic foods
+- `tip` - Daily wellness recommendations
+
+<Tip>
+  Highlights are ordered by priority (1 = highest). Check them daily for motivation and actionable guidance.
+</Tip>
+
+## Weekly Summary
+
+Get comprehensive statistics for the past 7 days:
+
+```bash
+curl https://api.ceboelha.com/insights/weekly-summary \
+  --cookie "ceboelha_access_token=..."
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "data": {
+    "period": {
+      "startDate": "2026-02-25",
+      "endDate": "2026-03-03"
+    },
+    "daysWithEntries": 7,
+    "symptoms": {
+      "total": 12,
+      "averageIntensity": 2.5,
+      "changeFromLastWeek": -15.5
+    },
+    "meals": {
+      "total": 28,
+      "uniqueFoods": 45,
+      "changeFromLastWeek": 5.2
+    },
+    "streak": {
+      "current": 7,
+      "longest": 14
+    },
+    "topSymptoms": [
+      {
+        "type": "bloating",
+        "count": 5,
+        "averageIntensity": 3.2
+      },
+      {
+        "type": "gas",
+        "count": 4,
+        "averageIntensity": 2.0
+      }
+    ]
+  }
+}
+```
+
+**Key metrics:**
+
+- `daysWithEntries` - How many days you logged data
+- `symptoms.changeFromLastWeek` - % change in symptom count (negative = improvement)
+- `meals.uniqueFoods` - Food variety in your diet
+- `streak.current` - Consecutive days with entries
+
+<Note>
+  A negative `changeFromLastWeek` for symptoms indicates improvement. Positive values mean symptoms increased.
+</Note>
+
+## Discoveries & Pattern Detection
+
+View identified patterns and food correlations:
+
+```bash
+curl https://api.ceboelha.com/insights/discoveries \
+  --cookie "ceboelha_access_token=..."
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "type": "trigger",
+      "confidence": "high",
+      "title": "Potential Trigger Identified",
+      "description": "Leite integral appears to cause symptoms 70% of the time",
+      "food": {
+        "foodId": 9012,
+        "foodName": "Leite integral"
+      },
+      "evidence": {
+        "occurrences": 10,
+        "symptomRate": 0.7,
+        "mostCommonSymptom": "bloating",
+        "averageDelay": 120
+      }
+    },
+    {
+      "type": "time_pattern",
+      "confidence": "medium",
+      "title": "Evening Symptom Pattern",
+      "description": "You experience more symptoms between 18:00-21:00",
+      "evidence": {
+        "timeWindow": "18:00-21:00",
+        "symptomCount": 8,
+        "percentageOfTotal": 40
+      }
+    },
+    {
+      "type": "combination",
+      "confidence": "medium",
+      "title": "Food Combination Alert",
+      "description": "Eating bread + cheese together often causes symptoms",
+      "foods": [
+        {
+          "foodId": 1234,
+          "foodName": "Pão integral"
+        },
+        {
+          "foodId": 5678,
+          "foodName": "Queijo mussarela"
+        }
+      ],
+      "evidence": {
+        "occurrences": 4,
+        "symptomRate": 0.75
+      }
+    },
+    {
+      "type": "safe_food",
+      "confidence": "high",
+      "title": "Safe Food Confirmed",
+      "description": "Banana has never caused symptoms in 15 occasions",
+      "food": {
+        "foodId": 3456,
+        "foodName": "Banana"
+      },
+      "evidence": {
+        "occurrences": 15,
+        "symptomRate": 0
+      }
+    }
+  ]
+}
+```
+
+**Discovery types:**
+
+- `trigger` - Foods that frequently precede symptoms
+- `time_pattern` - Time-based symptom trends
+- `combination` - Food combinations that correlate with symptoms
+- `safe_food` - Foods with no symptom correlation
+
+**Confidence levels:**
+
+- `high` - 5+ occurrences, strong correlation
+- `medium` - 3-4 occurrences, moderate correlation
+- `low` - 2 occurrences, weak correlation
+
+<Tip>
+  Focus on "high" confidence discoveries first. They have the strongest evidence and are most likely to be true triggers.
+</Tip>
+
+## Managing Problematic Foods
+
+### View Problematic Foods List
+
+Get all foods you've marked as problematic:
+
+```bash
+curl https://api.ceboelha.com/problematic-foods \
+  --cookie "ceboelha_access_token=..."
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "_id": "507f1f77bcf86cd799439013",
+      "userId": "507f191e810c19729de860ea",
+      "foodId": 9012,
+      "foodName": "Leite integral",
+      "status": "confirmed",
+      "totalIncidents": 8,
+      "lastIncident": "2026-03-03",
+      "incidents": [
+        {
+          "_id": "507f1f77bcf86cd799439014",
+          "diaryEntryId": "507f1f77bcf86cd799439015",
+          "date": "2026-03-03",
+          "symptomTypes": ["bloating", "cramps"],
+          "intensity": 4,
+          "notes": "Forte desconforto 2h depois"
+        }
+      ],
+      "createdAt": "2026-02-15T10:00:00.000Z",
+      "updatedAt": "2026-03-03T15:30:00.000Z"
+    }
+  ]
+}
+```
+
+### Add Problematic Food
+
+Manually mark a food as problematic:
+
+```bash
+curl -X POST https://api.ceboelha.com/problematic-foods \
+  --cookie "ceboelha_access_token=..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "foodId": 9012,
+    "foodName": "Leite integral",
+    "status": "suspected",
+    "diaryEntryId": "507f1f77bcf86cd799439015",
+    "symptomTypes": ["bloating", "gas"],
+    "intensity": 3,
+    "notes": "Sintomas começaram 2 horas depois"
+  }'
+```
+
+**Status options:**
+- `suspected` - Uncertain, testing phase
+- `confirmed` - Verified trigger food
+
+### Record Additional Incident
+
+If you eat a problematic food again and have symptoms, add another incident:
+
+```bash
+curl -X POST https://api.ceboelha.com/problematic-foods \
+  --cookie "ceboelha_access_token=..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "foodId": 9012,
+    "foodName": "Leite integral",
+    "status": "confirmed",
+    "diaryEntryId": "507f1f77bcf86cd799439020",
+    "symptomTypes": ["bloating"],
+    "intensity": 4
+  }'
+```
+
+The API will add this as a new incident to the existing problematic food record.
+
+### Check Specific Problematic Food
+
+Get details for a specific food:
+
+```bash
+curl https://api.ceboelha.com/problematic-foods/food/9012 \
+  --cookie "ceboelha_access_token=..."
+```
+
+### Remove Problematic Food
+
+If you successfully reintroduce a food:
+
+```bash
+curl -X DELETE https://api.ceboelha.com/problematic-foods/507f1f77bcf86cd799439013 \
+  --cookie "ceboelha_access_token=..."
+```
+
+### Remove Single Incident
+
+Remove a specific incident while keeping the food in the list:
+
+```bash
+curl -X DELETE https://api.ceboelha.com/problematic-foods/507f1f77bcf86cd799439013/incidents/507f1f77bcf86cd799439014 \
+  --cookie "ceboelha_access_token=..."
+```
+
+<Note>
+  If you remove the last incident, the entire problematic food record is automatically deleted.
+</Note>
+
+## Using Insights Effectively
+
+<Steps>
+  <Step title="Check daily highlights">
+    Start each day by reviewing highlights for motivation and warnings about trigger foods.
+
+    ```bash
+    curl https://api.ceboelha.com/insights/highlights \
+      --cookie "ceboelha_access_token=..."
+    ```
+  </Step>
+
+  <Step title="Review weekly progress">
+    Every Sunday, check your weekly summary to track improvement:
+
+    ```bash
+    curl https://api.ceboelha.com/insights/weekly-summary \
+      --cookie "ceboelha_access_token=..."
+    ```
+
+    Look for:
+    - Decreasing symptom counts
+    - Lower average intensity
+    - Increasing streak days
+  </Step>
+
+  <Step title="Analyze patterns monthly">
+    Once a month, review discoveries to identify new triggers:
+
+    ```bash
+    curl https://api.ceboelha.com/insights/discoveries \
+      --cookie "ceboelha_access_token=..."
+    ```
+
+    Pay attention to "high" confidence patterns.
+  </Step>
+
+  <Step title="Update problematic foods">
+    Based on discoveries, manage your problematic foods list:
+    - Add newly identified triggers
+    - Remove foods you've successfully reintroduced
+    - Update status from "suspected" to "confirmed"
+  </Step>
+</Steps>
+
+## Progress Tracking
+
+Monitor your journey over time:
+
+### Symptom Trends
+
+Compare weekly summaries to see if symptoms are decreasing:
+
+```bash
+# Current week
+curl https://api.ceboelha.com/insights/weekly-summary \
+  --cookie "ceboelha_access_token=..."
+```
+
+The `changeFromLastWeek` percentage shows your trend:
+- Negative values = improvement
+- Positive values = worsening
+
+### Trigger Identification Progress
+
+Track how many triggers you've identified:
+
+```bash
+curl https://api.ceboelha.com/profile \
+  --cookie "ceboelha_access_token=..."
+```
+
+Check `stats.triggersIdentified` to see your progress.
+
+### Streak Maintenance
+
+Consistent logging improves insight quality. Track your streak:
+
+```bash
+curl https://api.ceboelha.com/insights/weekly-summary \
+  --cookie "ceboelha_access_token=..."
+```
+
+Look at `streak.current` and `streak.longest`.
+
+<Tip>
+  A 30-day streak provides enough data for the API to identify reliable patterns and food correlations.
+</Tip>
+
+## Best Practices
+
+<Tip>
+  **Log consistently**: The more data you provide, the more accurate the insights. Aim for daily entries.
+</Tip>
+
+<Tip>
+  **Act on discoveries**: When the API identifies a high-confidence trigger, consider eliminating that food and testing it systematically.
+</Tip>
+
+<Tip>
+  **Track reintroductions**: When testing a problematic food, log detailed notes to help future you remember the context.
+</Tip>
+
+<Note>
+  Pattern detection requires at least 2 weeks of consistent logging. For best results, maintain a 30-day streak.
+</Note>
+
+## Common Workflows
+
+### Identifying Your First Trigger
+
+1. Log meals and symptoms for 2-4 weeks
+2. Check discoveries for high-confidence triggers
+3. Mark identified trigger as problematic
+4. Eliminate the food for 2 weeks
+5. Reintroduce systematically and log results
+
+### Managing Multiple Triggers
+
+1. Review problematic foods list regularly
+2. Prioritize triggers by `totalIncidents` and severity
+3. Focus on eliminating high-frequency triggers first
+4. Use safe foods list to build meal plans
+
+### Tracking Elimination Diet Progress
+
+1. Check weekly summary every Sunday
+2. Watch for decreasing symptom counts
+3. Celebrate streak achievements
+4. Review discoveries before starting reintroduction
+
+### Preparing for Doctor Visits
+
+```bash
+# Get comprehensive symptom data
+curl "https://api.ceboelha.com/diary/symptoms/overview?days=90" \
+  --cookie "ceboelha_access_token=..."
+
+# Get identified patterns
+curl https://api.ceboelha.com/insights/discoveries \
+  --cookie "ceboelha_access_token=..."
+
+# Get problematic foods list
+curl https://api.ceboelha.com/problematic-foods \
+  --cookie "ceboelha_access_token=..."
+```
+
+Export this data to show your doctor specific patterns and triggers.

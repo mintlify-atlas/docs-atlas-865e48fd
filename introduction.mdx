@@ -1,0 +1,232 @@
+---
+title: Introduction
+description: Welcome to the Ceboelha API - Your companion for managing IBS and the FODMAP diet
+---
+
+# Welcome to Ceboelha API
+
+Ceboelha API is a comprehensive REST API designed to help people manage Irritable Bowel Syndrome (IBS) through FODMAP diet tracking, symptom monitoring, and personalized insights.
+
+<Note>
+  Ceboelha means "little onion" in Portuguese - a playful reference to onions being a high-FODMAP food that many IBS sufferers need to avoid.
+</Note>
+
+## What is Ceboelha?
+
+Ceboelha provides a complete backend solution for IBS management applications, featuring:
+
+- **Food Database** - Comprehensive FODMAP information for thousands of foods
+- **Symptom Tracking** - Detailed logging of IBS symptoms with intensity and patterns
+- **Food Diary** - Track meals and identify trigger foods
+- **Smart Insights** - AI-powered pattern recognition and personalized recommendations
+- **Achievements System** - Gamification to encourage consistent tracking
+- **Secure Authentication** - JWT-based auth with refresh token rotation
+
+## Core Features
+
+<CardGroup cols={2}>
+  <Card title="Food Database" icon="apple-whole" href="/api/foods/search-foods">
+    Search 5000+ foods with FODMAP levels, nutrition info, and serving sizes
+  </Card>
+  
+  <Card title="Symptom Tracking" icon="heart-pulse" href="/api/diary/create-symptom">
+    Log symptoms with type, intensity, duration, and automatic pattern detection
+  </Card>
+  
+  <Card title="Smart Insights" icon="lightbulb" href="/api/insights/highlights">
+    Get personalized insights, trigger identification, and weekly summaries
+  </Card>
+  
+  <Card title="Achievements" icon="trophy" href="/api/achievements/list">
+    Motivate users with unlockable achievements and progress tracking
+  </Card>
+</CardGroup>
+
+## Tech Stack
+
+Ceboelha is built with modern, high-performance technologies:
+
+- **Runtime** - [Bun](https://bun.sh) for blazing-fast JavaScript execution
+- **Framework** - [Elysia](https://elysiajs.com) for type-safe REST APIs
+- **Database** - MongoDB with Mongoose ODM
+- **Authentication** - JWT with secure httpOnly cookies
+- **Documentation** - Swagger/Scalar interactive API docs
+
+## Key Capabilities
+
+### Authentication & Security
+
+- JWT access tokens (15min) + refresh tokens (7 days)
+- Automatic token rotation for enhanced security
+- Account lockout after failed login attempts
+- Rate limiting on all endpoints
+- bcrypt password hashing (12 rounds)
+
+See [Authentication](/api/auth/register) for details.
+
+### FODMAP Food Database
+
+- 5000+ foods with FODMAP classifications
+- Search by name, category, or FODMAP level
+- Nutrition information (calories, macros, fiber)
+- Multiple serving size options
+- Filterable by source (Monash, FODMAP Friendly, etc.)
+
+See [Foods API](/api/foods/search-foods) for details.
+
+### Diary & Symptom Tracking
+
+- Log meals with multiple foods and serving sizes
+- Track symptoms with 5-level intensity scale
+- Automatic correlation between foods and symptoms
+- Daily, weekly, and monthly summaries
+- Export capabilities for healthcare providers
+
+See [Diary API](/api/diary/list-entries) for details.
+
+### Insights & Analytics
+
+- **Highlights** - Daily personalized insights and tips
+- **Weekly Summary** - Track progress with week-over-week comparisons
+- **Discoveries** - AI-identified trigger foods and safe foods
+- **Patterns** - Time-based symptom patterns and food combinations
+
+See [Insights API](/api/insights/highlights) for details.
+
+## API Architecture
+
+Ceboelha follows REST best practices:
+
+```
+GET    /api/foods              # List/search foods
+GET    /api/foods/:id          # Get specific food
+
+POST   /api/diary/meal         # Log a meal
+POST   /api/diary/symptom      # Log a symptom
+GET    /api/diary              # List diary entries
+
+GET    /api/insights/highlights        # Get daily insights
+GET    /api/insights/weekly-summary    # Get weekly stats
+GET    /api/insights/discoveries       # Get identified patterns
+```
+
+<Note>
+  All API endpoints are prefixed with `/api` and most require authentication via Bearer token.
+</Note>
+
+## Response Format
+
+All API responses follow a consistent structure:
+
+```json
+{
+  "success": true,
+  "data": {
+    // Response data here
+  },
+  "message": "Optional success message",
+  "pagination": {
+    // For paginated endpoints
+    "total": 100,
+    "page": 1,
+    "limit": 50,
+    "pages": 2
+  }
+}
+```
+
+Error responses:
+
+```json
+{
+  "success": false,
+  "error": "ValidationError",
+  "code": "INVALID_INPUT",
+  "message": "Email is required",
+  "details": {
+    // Additional error context
+  }
+}
+```
+
+## Rate Limits
+
+<Warning>
+  Rate limits are enforced to prevent abuse and ensure fair usage for all users.
+</Warning>
+
+- **General API**: 100 requests per minute
+- **Authentication**: 5 requests per 15 minutes
+- **Sensitive operations**: 3 requests per 5 minutes
+
+Rate limit headers are included in responses:
+
+```
+X-RateLimit-Limit: 100
+X-RateLimit-Remaining: 95
+X-RateLimit-Reset: 1234567890
+```
+
+## Interactive Documentation
+
+Ceboelha includes built-in Swagger/Scalar documentation:
+
+```bash
+http://localhost:3333/docs
+```
+
+The interactive docs allow you to:
+- Explore all endpoints
+- Test API calls directly from the browser
+- View request/response schemas
+- Authenticate and test protected endpoints
+
+## Health Check
+
+Monitor API health:
+
+```bash
+curl http://localhost:3333/health
+```
+
+Response:
+
+```json
+{
+  "success": true,
+  "status": "healthy",
+  "timestamp": "2026-03-03T14:30:00.000Z",
+  "version": "1.0.0",
+  "environment": "production"
+}
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Quick Start" icon="rocket" href="/quickstart">
+    Get up and running in 5 minutes
+  </Card>
+  
+  <Card title="Authentication" icon="key" href="/api/auth/register">
+    Learn how to authenticate users
+  </Card>
+  
+  <Card title="API Reference" icon="book" href="/api/auth/overview">
+    Explore all available endpoints
+  </Card>
+  
+  <Card title="GitHub Repository" icon="github" href="https://github.com">
+    View the source code
+  </Card>
+</CardGroup>
+
+## Need Help?
+
+- **Email**: support@ceboelha.app
+- **Issues**: Report bugs on GitHub
+- **Swagger Docs**: `/docs` endpoint for interactive testing
+
+<Note>
+  This API was made with love for Julia 💕
+</Note>

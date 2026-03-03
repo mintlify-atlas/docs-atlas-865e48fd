@@ -1,0 +1,510 @@
+---
+title: Contributing
+description: Guidelines for contributing to the Ceboelha API project
+---
+
+We welcome contributions to the Ceboelha API! This guide will help you get started.
+
+## Getting Started
+
+### Prerequisites
+
+- [Bun](https://bun.sh) 1.0 or higher
+- MongoDB 7.0 or higher (local or Docker)
+- Git
+- Code editor (VS Code recommended)
+
+### Development Setup
+
+<Steps>
+  <Step title="Clone the Repository">
+    ```bash
+    git clone https://github.com/yourusername/ceboelha-api.git
+    cd ceboelha-api
+    ```
+  </Step>
+
+  <Step title="Install Dependencies">
+    ```bash
+    bun install
+    ```
+  </Step>
+
+  <Step title="Configure Environment">
+    Copy the example environment file:
+    ```bash
+    cp .env.example .env
+    ```
+
+    Update `.env` with your local configuration:
+    ```bash
+    PORT=3333
+    NODE_ENV=development
+    MONGODB_URI=mongodb://localhost:27017/ceboelha
+    JWT_ACCESS_SECRET=dev-access-secret-at-least-32-chars-long-here
+    JWT_REFRESH_SECRET=dev-refresh-secret-at-least-32-chars-long-here
+    CORS_ORIGIN=http://localhost:3000
+    ```
+  </Step>
+
+  <Step title="Start MongoDB">
+    Using Docker:
+    ```bash
+    docker run -d \
+      --name ceboelha-db \
+      -p 27017:27017 \
+      mongo:7
+    ```
+
+    Or install and run MongoDB locally.
+  </Step>
+
+  <Step title="Test Database Connection">
+    ```bash
+    bun run test:db
+    ```
+  </Step>
+
+  <Step title="Seed Database (Optional)">
+    ```bash
+    bun run db:seed
+    bun run db:seed-foods
+    ```
+  </Step>
+
+  <Step title="Start Development Server">
+    ```bash
+    bun run dev
+    ```
+
+    The API will be available at:
+    - API: http://localhost:3333
+    - Docs: http://localhost:3333/docs
+    - Health: http://localhost:3333/health
+  </Step>
+</Steps>
+
+## Code Style
+
+We use [Biome](https://biomejs.dev/) for linting and formatting.
+
+### Configuration
+
+Biome is configured in `biome.json`:
+
+```json
+{
+  "formatter": {
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineWidth": 100
+  },
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "single",
+      "semicolons": "asNeeded"
+    }
+  }
+}
+```
+
+### Style Guidelines
+
+- **Indentation**: 2 spaces (no tabs)
+- **Line Width**: 100 characters maximum
+- **Quotes**: Single quotes for strings
+- **Semicolons**: Only when needed (ASI)
+- **Imports**: Organized automatically by Biome
+
+### Running Linter
+
+```bash
+# Check for issues
+bun run lint
+
+# Format code
+bun run format
+```
+
+<Note>
+  Run `bun run format` before committing to ensure consistent code style.
+</Note>
+
+## Project Structure
+
+```
+src/
+├── app.ts                 # Main application setup
+├── index.ts               # Entry point
+├── config/                # Configuration
+│   ├── env.ts            # Environment variables
+│   └── database.ts       # MongoDB connection
+├── modules/               # Feature modules
+│   ├── auth/             # Authentication
+│   ├── users/            # User management
+│   ├── foods/            # Food database
+│   ├── diary/            # Food diary
+│   ├── problematic-foods/
+│   ├── insights/
+│   ├── news/
+│   ├── achievements/
+│   └── admin/
+├── shared/                # Shared code
+│   ├── errors/           # Error handling
+│   ├── middlewares/      # Middleware
+│   ├── types/            # TypeScript types
+│   └── utils/            # Utilities
+└── scripts/               # Database seeds, etc.
+```
+
+## Development Workflow
+
+### Making Changes
+
+<Steps>
+  <Step title="Create a Branch">
+    ```bash
+    git checkout -b feature/your-feature-name
+    ```
+
+    Branch naming conventions:
+    - `feature/` - New features
+    - `fix/` - Bug fixes
+    - `docs/` - Documentation changes
+    - `refactor/` - Code refactoring
+    - `test/` - Adding tests
+  </Step>
+
+  <Step title="Make Your Changes">
+    - Write clean, readable code
+    - Follow the existing code style
+    - Add comments for complex logic
+    - Update documentation if needed
+  </Step>
+
+  <Step title="Test Your Changes">
+    ```bash
+    # Run the API in development mode
+    bun run dev
+
+    # Test your endpoints using the Swagger docs
+    # http://localhost:3333/docs
+
+    # Or use curl/Postman/etc.
+    curl http://localhost:3333/health
+    ```
+  </Step>
+
+  <Step title="Lint and Format">
+    ```bash
+    bun run lint
+    bun run format
+    ```
+  </Step>
+
+  <Step title="Commit Your Changes">
+    Write clear, descriptive commit messages:
+
+    ```bash
+    git add .
+    git commit -m "feat: add email verification endpoint"
+    ```
+
+    Commit message format:
+    - `feat:` - New feature
+    - `fix:` - Bug fix
+    - `docs:` - Documentation
+    - `style:` - Formatting
+    - `refactor:` - Code restructuring
+    - `test:` - Adding tests
+    - `chore:` - Maintenance
+  </Step>
+
+  <Step title="Push and Create PR">
+    ```bash
+    git push origin feature/your-feature-name
+    ```
+
+    Then create a Pull Request on GitHub.
+  </Step>
+</Steps>
+
+## Testing
+
+### Manual Testing
+
+Use the Swagger documentation at http://localhost:3333/docs to test endpoints interactively.
+
+### Writing Tests
+
+<Note>
+  The project uses Bun's built-in test runner. Test files should end with `.test.ts`.
+</Note>
+
+Example test structure:
+
+```typescript
+import { describe, expect, test } from 'bun:test'
+import { app } from '@/app'
+
+describe('Health Check', () => {
+  test('GET /health returns 200', async () => {
+    const response = await app
+      .handle(new Request('http://localhost/health'))
+      .then((res) => res.json())
+
+    expect(response.success).toBe(true)
+    expect(response.status).toBe('healthy')
+  })
+})
+```
+
+Run tests:
+```bash
+bun test
+```
+
+## Pull Request Guidelines
+
+### Before Submitting
+
+- [ ] Code follows project style guidelines
+- [ ] Code has been linted and formatted
+- [ ] All changes have been tested
+- [ ] Documentation has been updated
+- [ ] Commit messages are clear and descriptive
+- [ ] No sensitive data (secrets, tokens) in commits
+
+### PR Description
+
+Include in your PR description:
+
+1. **What**: Brief description of changes
+2. **Why**: Reason for the changes
+3. **How**: Implementation approach
+4. **Testing**: How you tested the changes
+5. **Screenshots**: If applicable (UI changes)
+
+Example:
+```markdown
+## What
+Adds email verification for new user registrations
+
+## Why
+Enhances security by ensuring users own their email addresses
+
+## How
+- Added verification token generation
+- Created email sending service
+- Added verify-email endpoint
+- Updated user model with verified flag
+
+## Testing
+- Tested registration flow in development
+- Verified email sending works
+- Tested token validation
+- Tested expired token handling
+```
+
+### Review Process
+
+1. Maintainers will review your PR
+2. Address any requested changes
+3. Once approved, a maintainer will merge your PR
+
+## Coding Standards
+
+### TypeScript
+
+- Use TypeScript for all code
+- Avoid `any` type (Biome warns on explicit any)
+- Define interfaces for data structures
+- Use type inference where appropriate
+
+### Error Handling
+
+Use the custom error classes:
+
+```typescript
+import { BadRequestError, NotFoundError, UnauthorizedError } from '@/shared/errors'
+
+// Example
+if (!user) {
+  throw new NotFoundError('User not found')
+}
+```
+
+### Async/Await
+
+Use async/await instead of promise chains:
+
+```typescript
+// Good
+async function getUser(id: string) {
+  const user = await User.findById(id)
+  return user
+}
+
+// Avoid
+function getUser(id: string) {
+  return User.findById(id).then(user => user)
+}
+```
+
+### Comments
+
+Add comments for:
+- Complex business logic
+- Non-obvious code
+- API endpoint documentation
+- Function purposes (JSDoc style)
+
+```typescript
+/**
+ * Validates and refreshes JWT tokens
+ * @param refreshToken - The refresh token to validate
+ * @returns New access and refresh token pair
+ */
+async function refreshTokens(refreshToken: string) {
+  // Implementation
+}
+```
+
+## Module Development
+
+### Creating a New Module
+
+<Steps>
+  <Step title="Create Module Directory">
+    ```bash
+    mkdir -p src/modules/your-module
+    ```
+  </Step>
+
+  <Step title="Create Module Files">
+    ```
+    src/modules/your-module/
+    ├── index.ts           # Export controller
+    ├── controller.ts      # Elysia routes
+    ├── service.ts         # Business logic
+    ├── model.ts           # Mongoose schema
+    ├── types.ts           # TypeScript types
+    └── validation.ts      # Input validation
+    ```
+  </Step>
+
+  <Step title="Implement Controller">
+    ```typescript
+    // controller.ts
+    import { Elysia } from 'elysia'
+    import { authMiddleware } from '@/shared/middlewares'
+
+    export const yourModuleController = new Elysia({ prefix: '/your-module' })
+      .use(authMiddleware)
+      .get('/', async () => {
+        // Implementation
+      })
+    ```
+  </Step>
+
+  <Step title="Register in App">
+    ```typescript
+    // src/app.ts
+    import { yourModuleController } from '@/modules/your-module'
+
+    app.group('/api', (app) =>
+      app
+        // ... other modules
+        .use(yourModuleController)
+    )
+    ```
+  </Step>
+</Steps>
+
+## Database Changes
+
+### Mongoose Models
+
+- Use TypeScript interfaces for model types
+- Add indexes for frequently queried fields
+- Include timestamps
+- Add validation
+
+Example:
+```typescript
+import mongoose from 'mongoose'
+
+interface IExample {
+  name: string
+  createdAt: Date
+  updatedAt: Date
+}
+
+const exampleSchema = new mongoose.Schema<IExample>(
+  {
+    name: { type: String, required: true, unique: true },
+  },
+  { timestamps: true }
+)
+
+exampleSchema.index({ name: 1 })
+
+export const Example = mongoose.model<IExample>('Example', exampleSchema)
+```
+
+### Migrations
+
+If you need to migrate existing data:
+
+1. Create a script in `src/scripts/`
+2. Document the migration in your PR
+3. Test on development database first
+
+## Documentation
+
+### API Documentation
+
+Document endpoints using Elysia's detail option:
+
+```typescript
+.get('/endpoint', handler, {
+  detail: {
+    tags: ['YourModule'],
+    summary: 'Brief description',
+    description: 'Detailed description of what this endpoint does',
+  },
+})
+```
+
+### Code Documentation
+
+- Add JSDoc comments to functions
+- Document complex algorithms
+- Explain "why" not just "what"
+
+## Getting Help
+
+- **Questions**: Open a discussion on GitHub
+- **Bugs**: Open an issue with reproduction steps
+- **Features**: Open an issue to discuss before implementing
+- **Chat**: Join our Discord community (if available)
+
+## Code of Conduct
+
+Be respectful and constructive:
+
+- Be welcoming to newcomers
+- Accept constructive criticism gracefully
+- Focus on what's best for the project
+- Show empathy towards other contributors
+
+## License
+
+By contributing, you agree that your contributions will be licensed under the MIT License.
+
+## Recognition
+
+Contributors will be recognized in:
+- GitHub contributors page
+- Project README
+- Release notes (for significant contributions)

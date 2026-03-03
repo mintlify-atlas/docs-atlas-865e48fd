@@ -1,0 +1,241 @@
+---
+title: Get Month Summary
+description: Retrieve a calendar view summary of all days in a month with meal counts, symptoms, and daily status
+---
+
+## Endpoint
+
+```
+GET /diary/summary/month/:year/:month
+```
+
+## Authentication
+
+This endpoint requires authentication via Bearer token.
+
+```bash
+Authorization: Bearer <token>
+```
+
+## Path Parameters
+
+<ParamField path="year" type="string" required>
+  Year in YYYY format (e.g., "2024")
+</ParamField>
+
+<ParamField path="month" type="string" required>
+  Month as a number from 1-12 (e.g., "3" for March, "12" for December)
+</ParamField>
+
+## Response
+
+<ResponseField name="success" type="boolean">
+  Indicates if the request was successful
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  Month summary data
+  
+  <ResponseField name="year" type="number">
+    The requested year
+  </ResponseField>
+  
+  <ResponseField name="month" type="number">
+    The requested month (1-12)
+  </ResponseField>
+  
+  <ResponseField name="days" type="array">
+    Array of day summaries for each day in the month
+    
+    <ResponseField name="date" type="string">
+      Date in YYYY-MM-DD format
+    </ResponseField>
+    
+    <ResponseField name="dayOfMonth" type="number">
+      Day number (1-31)
+    </ResponseField>
+    
+    <ResponseField name="mealCount" type="number">
+      Number of meals logged on this day
+    </ResponseField>
+    
+    <ResponseField name="symptomCount" type="number">
+      Number of symptoms logged on this day
+    </ResponseField>
+    
+    <ResponseField name="dayStatus" type="string">
+      Overall status: `great`, `good`, `okay`, `bad`, `terrible`, or `no_data`
+    </ResponseField>
+    
+    <ResponseField name="worstIntensity" type="number" nullable>
+      Highest symptom intensity (1-5), or null if no symptoms
+    </ResponseField>
+    
+    <ResponseField name="problematicFoods" type="array">
+      List of problematic foods consumed this day
+    </ResponseField>
+  </ResponseField>
+  
+  <ResponseField name="monthStats" type="object">
+    Overall statistics for the month
+    
+    <ResponseField name="totalMeals" type="number">
+      Total meals logged in the month
+    </ResponseField>
+    
+    <ResponseField name="totalSymptoms" type="number">
+      Total symptoms logged in the month
+    </ResponseField>
+    
+    <ResponseField name="daysWithData" type="number">
+      Number of days with at least one entry
+    </ResponseField>
+    
+    <ResponseField name="daysWithSymptoms" type="number">
+      Number of days with at least one symptom
+    </ResponseField>
+    
+    <ResponseField name="avgSymptomsPerDay" type="number">
+      Average number of symptoms per day (for days with data)
+    </ResponseField>
+    
+    <ResponseField name="greatDays" type="number">
+      Number of days with "great" status
+    </ResponseField>
+    
+    <ResponseField name="badDays" type="number">
+      Number of days with "bad" or "terrible" status
+    </ResponseField>
+  </ResponseField>
+</ResponseField>
+
+## Examples
+
+### Get summary for March 2024
+
+```bash
+curl -X GET "https://api.ceboelha.com/diary/summary/month/2024/3" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+### Get summary for current month
+
+```bash
+YEAR=$(date +%Y)
+MONTH=$(date +%-m)
+curl -X GET "https://api.ceboelha.com/diary/summary/month/$YEAR/$MONTH" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+### Get summary for previous month
+
+```bash
+curl -X GET "https://api.ceboelha.com/diary/summary/month/2024/2" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+### Get summary for December (year-end review)
+
+```bash
+curl -X GET "https://api.ceboelha.com/diary/summary/month/2023/12" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+<ResponseExample>
+```json
+{
+  "success": true,
+  "data": {
+    "year": 2024,
+    "month": 3,
+    "days": [
+      {
+        "date": "2024-03-01",
+        "dayOfMonth": 1,
+        "mealCount": 3,
+        "symptomCount": 0,
+        "dayStatus": "great",
+        "worstIntensity": null,
+        "problematicFoods": []
+      },
+      {
+        "date": "2024-03-02",
+        "dayOfMonth": 2,
+        "mealCount": 4,
+        "symptomCount": 1,
+        "dayStatus": "good",
+        "worstIntensity": 2,
+        "problematicFoods": []
+      },
+      {
+        "date": "2024-03-03",
+        "dayOfMonth": 3,
+        "mealCount": 0,
+        "symptomCount": 0,
+        "dayStatus": "no_data",
+        "worstIntensity": null,
+        "problematicFoods": []
+      },
+      {
+        "date": "2024-03-15",
+        "dayOfMonth": 15,
+        "mealCount": 4,
+        "symptomCount": 2,
+        "dayStatus": "okay",
+        "worstIntensity": 3,
+        "problematicFoods": [
+          {
+            "foodId": 3456,
+            "foodName": "Feijão preto"
+          }
+        ]
+      }
+    ],
+    "monthStats": {
+      "totalMeals": 95,
+      "totalSymptoms": 12,
+      "daysWithData": 28,
+      "daysWithSymptoms": 8,
+      "avgSymptomsPerDay": 0.43,
+      "greatDays": 20,
+      "badDays": 2
+    }
+  }
+}
+```
+</ResponseExample>
+
+## Calendar Display
+
+This endpoint is specifically designed for calendar views. Use the `days` array to render a monthly calendar where:
+
+- Each day shows `mealCount` and `symptomCount`
+- Color-code days by `dayStatus`
+- Show indicator icons for days with problematic foods
+- Gray out days with `no_data` status
+
+### Status Color Recommendations
+
+| Status | Suggested Color |
+|--------|----------------|
+| `great` | Green (#10B981) |
+| `good` | Light Green (#34D399) |
+| `okay` | Yellow (#FBBF24) |
+| `bad` | Orange (#FB923C) |
+| `terrible` | Red (#EF4444) |
+| `no_data` | Gray (#9CA3AF) |
+
+## Month Statistics
+
+The `monthStats` object provides valuable insights:
+
+- **Adherence**: `daysWithData / total days` shows how consistently the user is tracking
+- **Symptom Frequency**: `daysWithSymptoms / daysWithData` shows percentage of symptomatic days
+- **Progress**: Compare `greatDays` and `badDays` across months to track improvement
+- **Average Severity**: Use `avgSymptomsPerDay` to understand overall symptom burden
+
+## Performance Notes
+
+- This endpoint efficiently aggregates data for an entire month in a single request
+- Results are typically cached for improved performance
+- Use this instead of making 30+ individual day summary requests

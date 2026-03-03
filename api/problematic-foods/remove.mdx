@@ -1,0 +1,232 @@
+---
+title: 'Remove Problematic Food'
+api: 'DELETE /problematic-foods/{id}'
+description: 'Completely remove a food from the problematic foods list'
+---
+
+Permanently deletes a problematic food record and all associated incidents. This action cannot be undone.
+
+<Warning>
+  This endpoint removes the entire problematic food record, including all incident history. To remove only a specific incident, use the Remove Incident endpoint instead.
+</Warning>
+
+## Authentication
+
+<ParamField path="header.Authorization" type="string" required>
+  Bearer token for authentication. Format: `Bearer YOUR_TOKEN`
+</ParamField>
+
+## Path Parameters
+
+<ParamField path="path.id" type="string" required>
+  The unique identifier of the problematic food record to delete. Must be a valid MongoDB ObjectId.
+</ParamField>
+
+## Response
+
+<ResponseField name="success" type="boolean" required>
+  Indicates whether the deletion was successful.
+</ResponseField>
+
+<ResponseField name="message" type="string" required>
+  Confirmation message: "Alimento removido da lista de problemáticos".
+</ResponseField>
+
+<RequestExample>
+
+```bash cURL
+curl --request DELETE \
+  --url https://api.ceboelha.com/problematic-foods/507f1f77bcf86cd799439011 \
+  --header 'Authorization: Bearer YOUR_TOKEN'
+```
+
+```javascript JavaScript
+const response = await fetch(
+  'https://api.ceboelha.com/problematic-foods/507f1f77bcf86cd799439011',
+  {
+    method: 'DELETE',
+    headers: {
+      'Authorization': 'Bearer YOUR_TOKEN'
+    }
+  }
+);
+
+const data = await response.json();
+```
+
+```python Python
+import requests
+
+response = requests.delete(
+    'https://api.ceboelha.com/problematic-foods/507f1f77bcf86cd799439011',
+    headers={'Authorization': 'Bearer YOUR_TOKEN'}
+)
+
+data = response.json()
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json 200
+{
+  "success": true,
+  "message": "Alimento removido da lista de problemáticos"
+}
+```
+
+```json 404 - Not Found
+{
+  "success": false,
+  "error": "Alimento problemático não encontrado"
+}
+```
+
+```json 400 - Invalid ID
+{
+  "success": false,
+  "error": "Alimento problemático não encontrado"
+}
+```
+
+</ResponseExample>
+
+## Alternative: Remove Individual Incident
+
+To remove only a specific incident while keeping the food in the problematic list:
+
+```http
+DELETE /problematic-foods/{id}/incidents/{incidentId}
+```
+
+<Info>
+  When removing an incident, if it's the last incident for that food, the entire problematic food record will be automatically deleted.
+</Info>
+
+### Incident Removal Response
+
+<ResponseField name="success" type="boolean" required>
+  Indicates whether the incident removal was successful.
+</ResponseField>
+
+<ResponseField name="message" type="string" required>
+  Message indicating the result: "Incidente removido com sucesso" or "Último incidente removido, alimento removido da lista".
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  Updated problematic food record (null if the last incident was removed and the food was deleted).
+  
+  <Expandable title="properties">
+    <ResponseField name="_id" type="string" required>
+      Unique identifier for the problematic food record.
+    </ResponseField>
+    
+    <ResponseField name="totalIncidents" type="number" required>
+      Updated total number of incidents.
+    </ResponseField>
+    
+    <ResponseField name="lastIncident" type="string" required>
+      Date of the new most recent incident.
+    </ResponseField>
+    
+    <ResponseField name="status" type="string" required>
+      Updated status (may change from `confirmed` to `suspected` if incidents drop below 3).
+    </ResponseField>
+    
+    <ResponseField name="incidents" type="object[]" required>
+      Updated array of remaining incidents.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Request Example: Remove Specific Incident
+
+<RequestExample>
+
+```bash cURL
+curl --request DELETE \
+  --url https://api.ceboelha.com/problematic-foods/507f1f77bcf86cd799439011/incidents/507f1f77bcf86cd799439012 \
+  --header 'Authorization: Bearer YOUR_TOKEN'
+```
+
+```javascript JavaScript
+const response = await fetch(
+  'https://api.ceboelha.com/problematic-foods/507f1f77bcf86cd799439011/incidents/507f1f77bcf86cd799439012',
+  {
+    method: 'DELETE',
+    headers: {
+      'Authorization': 'Bearer YOUR_TOKEN'
+    }
+  }
+);
+
+const data = await response.json();
+```
+
+```python Python
+import requests
+
+response = requests.delete(
+    'https://api.ceboelha.com/problematic-foods/507f1f77bcf86cd799439011/incidents/507f1f77bcf86cd799439012',
+    headers={'Authorization': 'Bearer YOUR_TOKEN'}
+)
+
+data = response.json()
+```
+
+</RequestExample>
+
+### Response Example: Incident Removed
+
+<ResponseExample>
+
+```json 200 - Incident Removed
+{
+  "success": true,
+  "message": "Incidente removido com sucesso",
+  "data": {
+    "_id": "507f1f77bcf86cd799439011",
+    "userId": "507f191e810c19729de860ea",
+    "foodId": 1234,
+    "foodName": "Onion",
+    "totalIncidents": 2,
+    "lastIncident": "2024-03-10",
+    "status": "suspected",
+    "incidents": [
+      {
+        "diaryEntryId": "507f1f77bcf86cd799439013",
+        "date": "2024-03-10",
+        "symptomTypes": ["bloating", "gas"],
+        "intensity": 3
+      },
+      {
+        "diaryEntryId": "507f1f77bcf86cd799439014",
+        "date": "2024-03-05",
+        "symptomTypes": ["bloating"],
+        "intensity": 2
+      }
+    ],
+    "createdAt": "2024-03-05T10:30:00.000Z",
+    "updatedAt": "2024-03-15T14:25:00.000Z"
+  }
+}
+```
+
+```json 200 - Last Incident Removed
+{
+  "success": true,
+  "message": "Último incidente removido, alimento removido da lista",
+  "data": null
+}
+```
+
+</ResponseExample>
+
+## Notes
+
+- Only the authenticated user who created the problematic food record can delete it
+- Invalid ObjectId formats will return a 404 error
+- User stats (`triggersIdentified`) are automatically updated after deletion
+- When an incident is removed and the status changes from `confirmed` to `suspected` (incidents drop below 3), user stats are recalculated
+- The `incidentId` parameter in the incident removal endpoint refers to the `diaryEntryId` field of the incident

@@ -1,0 +1,109 @@
+---
+title: 'Authentication Overview'
+description: 'Secure authentication system with JWT tokens, device tracking, and brute force protection'
+---
+
+## Overview
+
+The Ceboelha API uses a secure JWT-based authentication system with the following features:
+
+- **Access & Refresh Token Pattern**: Short-lived access tokens (15 minutes) with long-lived refresh tokens (7 days)
+- **Token Rotation**: Refresh tokens are automatically rotated on each use to prevent reuse attacks
+- **HttpOnly Cookies**: Tokens are stored in secure, HttpOnly cookies for enhanced security
+- **Brute Force Protection**: Account lockout after 5 failed login attempts for 15 minutes
+- **Device Tracking**: All sessions are tracked by device and IP address
+- **Rate Limiting**: All auth endpoints are rate-limited (5 requests per 15 minutes)
+
+## Security Features
+
+### Password Requirements
+
+Passwords must meet the following criteria:
+- Minimum 8 characters
+- At least 1 uppercase letter
+- At least 1 lowercase letter
+- At least 1 number
+- At least 1 special character (!@#$%^&*...)
+- Not a common password
+
+### Token Storage
+
+Tokens are automatically set as HttpOnly cookies:
+- `accessToken`: Access token cookie (15 minutes)
+- `refreshToken`: Refresh token cookie (7 days)
+
+**Important**: You don't need to manually handle tokens in the request body. The cookies are automatically sent with each request.
+
+### Account Lockout
+
+After 5 failed login attempts, accounts are locked for 15 minutes. The system will inform users of remaining attempts after 3 failed tries.
+
+## Authentication Flow
+
+1. **Register** or **Login** to receive tokens via cookies
+2. **Access Protected Routes** - cookies are automatically included
+3. **Refresh Token** when the access token expires (before making requests)
+4. **Logout** to revoke tokens and clear cookies
+
+## Available Endpoints
+
+<CardGroup cols={2}>
+  <Card title="Register" icon="user-plus" href="/api/auth/register">
+    Create a new user account
+  </Card>
+  <Card title="Login" icon="right-to-bracket" href="/api/auth/login">
+    Authenticate existing user
+  </Card>
+  <Card title="Refresh Token" icon="arrows-rotate" href="/api/auth/refresh-token">
+    Renew access token
+  </Card>
+  <Card title="Logout" icon="right-from-bracket" href="/api/auth/logout">
+    Revoke tokens and end session
+  </Card>
+</CardGroup>
+
+## Error Codes
+
+All authentication endpoints may return the following error codes:
+
+| Code | Status | Description |
+|------|--------|-------------|
+| `VALIDATION_ERROR` | 400 | Invalid input data (e.g., weak password, invalid email) |
+| `UNAUTHORIZED` | 401 | Invalid credentials or expired token |
+| `CONFLICT` | 409 | Email already registered |
+| `RATE_LIMIT` | 429 | Too many requests or account locked |
+
+## Common Error Responses
+
+### Validation Error (400)
+
+```json
+{
+  "success": false,
+  "error": "Validation failed",
+  "code": "VALIDATION_ERROR",
+  "message": "Senha deve ter no mínimo 8 caracteres"
+}
+```
+
+### Unauthorized (401)
+
+```json
+{
+  "success": false,
+  "error": "Unauthorized",
+  "code": "UNAUTHORIZED",
+  "message": "E-mail ou senha inválidos"
+}
+```
+
+### Account Locked (429)
+
+```json
+{
+  "success": false,
+  "error": "Rate limit exceeded",
+  "code": "RATE_LIMIT",
+  "message": "Conta bloqueada temporariamente. Tente novamente em 15 minutos."
+}
+```

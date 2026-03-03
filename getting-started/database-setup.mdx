@@ -1,0 +1,310 @@
+---
+title: Database Setup
+description: Configure MongoDB and set up the database for Ceboelha API
+---
+
+## MongoDB Requirements
+
+Ceboelha API uses MongoDB as its database, accessed through Mongoose ODM.
+
+**Minimum version:** MongoDB 6.0 or higher
+
+## Installation Options
+
+<Tabs>
+  <Tab title="Local MongoDB">
+    Install MongoDB locally on your machine:
+
+    **macOS (Homebrew):**
+    ```bash
+    brew tap mongodb/brew
+    brew install mongodb-community
+    brew services start mongodb-community
+    ```
+
+    **Ubuntu/Debian:**
+    ```bash
+    sudo apt-get install -y mongodb-org
+    sudo systemctl start mongod
+    sudo systemctl enable mongod
+    ```
+
+    **Windows:**
+    Download and install from [MongoDB Download Center](https://www.mongodb.com/try/download/community)
+  </Tab>
+
+  <Tab title="Docker">
+    Run MongoDB in a Docker container:
+
+    ```bash
+    docker run -d \
+      --name mongodb \
+      -p 27017:27017 \
+      -e MONGO_INITDB_ROOT_USERNAME=admin \
+      -e MONGO_INITDB_ROOT_PASSWORD=password \
+      -v mongodb_data:/data/db \
+      mongo:latest
+    ```
+
+    <Note>
+      When using Docker with authentication, update your `MONGODB_URI` accordingly.
+    </Note>
+  </Tab>
+
+  <Tab title="MongoDB Atlas">
+    Use MongoDB's cloud service:
+
+    1. Create a free account at [MongoDB Atlas](https://www.mongodb.com/cloud/atlas)
+    2. Create a new cluster
+    3. Set up database access (username/password)
+    4. Whitelist your IP address
+    5. Get your connection string from the "Connect" button
+
+    <Warning>
+      Remember to whitelist your deployment server's IP address when deploying to production.
+    </Warning>
+  </Tab>
+</Tabs>
+
+## Connection Configuration
+
+Configure the `MONGODB_URI` environment variable in your `.env` file based on your setup:
+
+### Local MongoDB (No Authentication)
+
+```bash
+MONGODB_URI=mongodb://localhost:27017/ceboelha
+```
+
+This is the default for local development without authentication.
+
+### Local MongoDB (With Authentication)
+
+```bash
+MONGODB_URI=mongodb://admin:password@localhost:27017/ceboelha?authSource=admin
+```
+
+Use this when running MongoDB with authentication (e.g., via Docker).
+
+### MongoDB Atlas
+
+```bash
+MONGODB_URI=mongodb+srv://user:password@cluster.mongodb.net/ceboelha?retryWrites=true&w=majority
+```
+
+Replace `user`, `password`, and `cluster` with your actual credentials and cluster name.
+
+<Warning>
+  Always use environment variables for database credentials. Never hardcode them in your source code.
+</Warning>
+
+## Database Connection
+
+Ceboelha API handles database connection automatically on startup using Mongoose. The connection includes:
+
+- **Automatic reconnection** on disconnection
+- **Connection monitoring** with event logging
+- **Graceful shutdown** handling
+
+### Connection Events
+
+The API logs various connection events:
+
+```
+✅ MongoDB connected: localhost
+```
+
+Successful connection established.
+
+```
+⚠️ MongoDB disconnected
+```
+
+Connection lost (will attempt to reconnect).
+
+```
+✅ MongoDB reconnected
+```
+
+Connection restored after disconnection.
+
+```
+❌ MongoDB connection error: [error details]
+```
+
+Connection error occurred.
+
+## Testing the Connection
+
+Verify your MongoDB connection before starting the application:
+
+```bash
+bun run test:db
+```
+
+This script will:
+1. Attempt to connect to MongoDB using your `MONGODB_URI`
+2. Report the connection status
+3. Display the connected host
+4. Exit gracefully
+
+**Successful output:**
+```
+✅ MongoDB connected: localhost
+👋 MongoDB disconnected gracefully
+```
+
+## Database Seeding
+
+Ceboelha API provides scripts to populate your database with initial data.
+
+### Seed All Data
+
+```bash
+bun run db:seed
+```
+
+Populates the database with:
+- Sample users
+- Initial configuration
+- Test data for development
+
+### Seed FODMAP Foods
+
+```bash
+bun run db:seed-foods
+```
+
+Populates the database with FODMAP food data, including:
+- Food names and categories
+- FODMAP levels (high, medium, low)
+- Serving sizes
+- Nutritional information
+
+<Note>
+  Seeding is optional and primarily useful for development and testing. Production databases typically start empty and are populated through the API.
+</Note>
+
+## Data Models
+
+Ceboelha API uses Mongoose schemas for data modeling. The main collections are:
+
+| Collection | Description |
+|------------|-------------|
+| `users` | User accounts and authentication |
+| `symptoms` | IBS symptom tracking entries |
+| `foods` | FODMAP food database |
+| `meals` | User meal logs |
+| `diaries` | Daily health diaries |
+
+### Schema Validation
+
+All models include:
+- **Type validation** - Ensures data types are correct
+- **Required fields** - Enforces mandatory fields
+- **Custom validators** - Business logic validation
+- **Timestamps** - Automatic `createdAt` and `updatedAt` fields
+
+## Database Connection Flow
+
+The application handles database connection in the following sequence:
+
+<Steps>
+  <Step title="Validate environment">
+    Check that `MONGODB_URI` is set in environment variables.
+  </Step>
+
+  <Step title="Attempt connection">
+    Mongoose attempts to connect to MongoDB using the provided URI.
+  </Step>
+
+  <Step title="Setup event handlers">
+    Register event handlers for connection monitoring:
+    - `error` - Log connection errors
+    - `disconnected` - Log disconnection warnings
+    - `reconnected` - Log successful reconnections
+  </Step>
+
+  <Step title="Start server">
+    Once connected, the HTTP server starts accepting requests.
+  </Step>
+</Steps>
+
+## Graceful Shutdown
+
+When the application receives a shutdown signal (SIGTERM, SIGINT), it:
+
+1. Stops accepting new HTTP requests
+2. Waits for in-flight requests to complete
+3. Closes the database connection gracefully
+4. Exits the process
+
+```
+⚠️ Received SIGTERM, shutting down gracefully...
+✅ Server stopped accepting new requests
+👋 MongoDB disconnected gracefully
+✅ Database connection closed
+```
+
+## Troubleshooting
+
+### Connection Refused
+
+**Error:**
+```
+❌ Failed to connect to MongoDB: MongoServerError: connect ECONNREFUSED
+```
+
+**Solutions:**
+- Verify MongoDB is running: `mongosh` or check service status
+- Check the port (default: 27017)
+- Verify firewall settings
+
+### Authentication Failed
+
+**Error:**
+```
+❌ MongoDB connection error: MongoServerError: Authentication failed
+```
+
+**Solutions:**
+- Verify username and password in `MONGODB_URI`
+- Check `authSource` parameter (usually `admin`)
+- Ensure user has appropriate permissions
+
+### Network Timeout
+
+**Error:**
+```
+❌ Failed to connect to MongoDB: MongoServerError: connection timeout
+```
+
+**Solutions:**
+- Check network connectivity
+- Verify MongoDB Atlas IP whitelist
+- Check if MongoDB is accessible from your network
+
+## Production Considerations
+
+<Warning>
+  When deploying to production, follow these best practices:
+</Warning>
+
+- **Use authentication** - Never run MongoDB without authentication in production
+- **Enable SSL/TLS** - Encrypt database connections
+- **Whitelist IPs** - Only allow connections from your application servers
+- **Regular backups** - Set up automated database backups
+- **Monitor performance** - Use MongoDB Atlas monitoring or similar tools
+- **Set replica sets** - Use replica sets for high availability
+- **Resource limits** - Configure appropriate memory and connection limits
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Authentication" icon="lock" href="/concepts/authentication">
+    Learn how to authenticate and manage users
+  </Card>
+  <Card title="API Reference" icon="book" href="/api/auth/overview">
+    Explore the API endpoints and data models
+  </Card>
+</CardGroup>

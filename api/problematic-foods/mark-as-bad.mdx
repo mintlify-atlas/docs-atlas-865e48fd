@@ -1,0 +1,255 @@
+---
+title: 'Mark Food as Problematic'
+api: 'POST /problematic-foods'
+description: 'Mark a food as problematic or add a new incident to an existing problematic food'
+---
+
+Adds a food to the problematic foods list or records a new incident for an already marked food. Returns status 201 for new records and 200 for new incidents on existing records.
+
+<Info>
+  If the food is already marked as problematic, this endpoint adds a new incident to the existing record. After 3 or more incidents, the status automatically changes to `confirmed`.
+</Info>
+
+## Authentication
+
+<ParamField path="header.Authorization" type="string" required>
+  Bearer token for authentication. Format: `Bearer YOUR_TOKEN`
+</ParamField>
+
+## Request Body
+
+<ParamField path="body.foodId" type="number" required>
+  The ID of the food to mark as problematic. Must be a positive integer.
+</ParamField>
+
+<ParamField path="body.symptomTypes" type="string[]" required>
+  Array of symptom types experienced (minimum 1 required). Valid values: `bloating`, `gas`, `cramps`, `nausea`, `diarrhea`, `constipation`, `reflux`, `fatigue`, `headache`, `brain_fog`, `other`.
+</ParamField>
+
+<ParamField path="body.intensity" type="number" required>
+  Severity of symptoms on a scale of 1-5, where 1 is mild and 5 is severe.
+</ParamField>
+
+<ParamField path="body.diaryEntryId" type="string">
+  Optional reference to a diary entry. If not provided, a direct incident ID will be generated.
+</ParamField>
+
+<ParamField path="body.foodName" type="string">
+  Optional food name. If not provided, it will be fetched from the foods database.
+</ParamField>
+
+<ParamField path="body.notes" type="string">
+  Optional notes about the incident. Maximum 500 characters.
+</ParamField>
+
+## Response
+
+<ResponseField name="success" type="boolean" required>
+  Indicates whether the request was successful.
+</ResponseField>
+
+<ResponseField name="message" type="string" required>
+  Descriptive message: "Alimento adicionado à lista de problemáticos" for new records or "Novo incidente registrado" for additional incidents.
+</ResponseField>
+
+<ResponseField name="data" type="object" required>
+  The created or updated problematic food record.
+  
+  <Expandable title="properties">
+    <ResponseField name="_id" type="string" required>
+      Unique identifier for the problematic food record.
+    </ResponseField>
+    
+    <ResponseField name="userId" type="string" required>
+      ID of the user who marked this food as problematic.
+    </ResponseField>
+    
+    <ResponseField name="foodId" type="number" required>
+      Reference ID to the food in the foods database.
+    </ResponseField>
+    
+    <ResponseField name="foodName" type="string" required>
+      Name of the problematic food.
+    </ResponseField>
+    
+    <ResponseField name="totalIncidents" type="number" required>
+      Total number of incidents recorded for this food.
+    </ResponseField>
+    
+    <ResponseField name="lastIncident" type="string" required>
+      Date of the most recent incident (ISO date format: YYYY-MM-DD).
+    </ResponseField>
+    
+    <ResponseField name="status" type="string" required>
+      Current status: `suspected` (1-2 incidents) or `confirmed` (3+ incidents).
+    </ResponseField>
+    
+    <ResponseField name="incidents" type="object[]" required>
+      Array of all incident records, including the newly added one.
+      
+      <Expandable title="properties">
+        <ResponseField name="diaryEntryId" type="string" required>
+          Reference to the diary entry or direct incident ID.
+        </ResponseField>
+        
+        <ResponseField name="date" type="string" required>
+          Date of the incident (ISO date format: YYYY-MM-DD).
+        </ResponseField>
+        
+        <ResponseField name="symptomTypes" type="string[]" required>
+          Array of symptom types experienced.
+        </ResponseField>
+        
+        <ResponseField name="intensity" type="number" required>
+          Symptom intensity on a scale of 1-5.
+        </ResponseField>
+        
+        <ResponseField name="notes" type="string">
+          Optional notes about the incident.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+    
+    <ResponseField name="createdAt" type="string" required>
+      Timestamp when the record was created.
+    </ResponseField>
+    
+    <ResponseField name="updatedAt" type="string" required>
+      Timestamp when the record was last updated.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<RequestExample>
+
+```bash cURL
+curl --request POST \
+  --url https://api.ceboelha.com/problematic-foods \
+  --header 'Authorization: Bearer YOUR_TOKEN' \
+  --header 'Content-Type: application/json' \
+  --data '{
+    "foodId": 1234,
+    "foodName": "Onion",
+    "symptomTypes": ["bloating", "gas", "cramps"],
+    "intensity": 4,
+    "notes": "Ate raw onion in salad, symptoms within 2 hours"
+  }'
+```
+
+```javascript JavaScript
+const response = await fetch('https://api.ceboelha.com/problematic-foods', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer YOUR_TOKEN',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    foodId: 1234,
+    foodName: 'Onion',
+    symptomTypes: ['bloating', 'gas', 'cramps'],
+    intensity: 4,
+    notes: 'Ate raw onion in salad, symptoms within 2 hours'
+  })
+});
+
+const data = await response.json();
+```
+
+```python Python
+import requests
+
+response = requests.post(
+    'https://api.ceboelha.com/problematic-foods',
+    headers={'Authorization': 'Bearer YOUR_TOKEN'},
+    json={
+        'foodId': 1234,
+        'foodName': 'Onion',
+        'symptomTypes': ['bloating', 'gas', 'cramps'],
+        'intensity': 4,
+        'notes': 'Ate raw onion in salad, symptoms within 2 hours'
+    }
+)
+
+data = response.json()
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json 201 - New Record
+{
+  "success": true,
+  "message": "Alimento adicionado à lista de problemáticos",
+  "data": {
+    "_id": "507f1f77bcf86cd799439011",
+    "userId": "507f191e810c19729de860ea",
+    "foodId": 1234,
+    "foodName": "Onion",
+    "totalIncidents": 1,
+    "lastIncident": "2024-03-15",
+    "status": "suspected",
+    "incidents": [
+      {
+        "diaryEntryId": "507f1f77bcf86cd799439012",
+        "date": "2024-03-15",
+        "symptomTypes": ["bloating", "gas", "cramps"],
+        "intensity": 4,
+        "notes": "Ate raw onion in salad, symptoms within 2 hours"
+      }
+    ],
+    "createdAt": "2024-03-15T14:20:00.000Z",
+    "updatedAt": "2024-03-15T14:20:00.000Z"
+  }
+}
+```
+
+```json 200 - New Incident
+{
+  "success": true,
+  "message": "Novo incidente registrado",
+  "data": {
+    "_id": "507f1f77bcf86cd799439011",
+    "userId": "507f191e810c19729de860ea",
+    "foodId": 1234,
+    "foodName": "Onion",
+    "totalIncidents": 3,
+    "lastIncident": "2024-03-15",
+    "status": "confirmed",
+    "incidents": [
+      {
+        "diaryEntryId": "507f1f77bcf86cd799439012",
+        "date": "2024-03-15",
+        "symptomTypes": ["bloating", "gas", "cramps"],
+        "intensity": 4,
+        "notes": "Ate raw onion in salad, symptoms within 2 hours"
+      },
+      {
+        "diaryEntryId": "507f1f77bcf86cd799439013",
+        "date": "2024-03-10",
+        "symptomTypes": ["bloating", "gas"],
+        "intensity": 3
+      },
+      {
+        "diaryEntryId": "507f1f77bcf86cd799439014",
+        "date": "2024-03-05",
+        "symptomTypes": ["bloating"],
+        "intensity": 2
+      }
+    ],
+    "createdAt": "2024-03-05T10:30:00.000Z",
+    "updatedAt": "2024-03-15T14:20:00.000Z"
+  }
+}
+```
+
+</ResponseExample>
+
+## Notes
+
+- The `date` field for the incident is automatically set to today's date
+- Status changes from `suspected` to `confirmed` automatically after the 3rd incident
+- If `foodName` is not provided, it will be fetched from the foods database
+- If the food doesn't exist in the database, a fallback name will be generated
+- This action triggers achievement recalculation and activity logging in the background
+- User stats (`triggersIdentified`) are updated when a food reaches `confirmed` status

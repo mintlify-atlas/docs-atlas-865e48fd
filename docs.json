@@ -1,122 +1,158 @@
 {
   "$schema": "https://mintlify.com/docs.json",
-  "theme": "mint",
-  "name": "Mint Starter Kit",
+  "name": "Ceboelha API",
+  "theme": "almond",
   "colors": {
-    "primary": "#16A34A",
-    "light": "#07C983",
-    "dark": "#15803D"
+    "primary": "#8B5CF6",
+    "light": "#A78BFA",
+    "dark": "#7C3AED"
   },
-  "favicon": "/favicon.svg",
+  "navbar": {
+    "primary": {
+      "type": "github",
+      "href": "https://github.com/jmcdutra/ceboelha-api"
+    }
+  },
+  "footer": {
+    "socials": {
+      "github": "https://github.com/jmcdutra/ceboelha-api"
+    }
+  },
   "navigation": {
     "tabs": [
       {
-        "tab": "Guides",
+        "tab": "Documentation",
         "groups": [
           {
-            "group": "Getting started",
+            "group": "Overview",
+            "pages": ["introduction", "quickstart"]
+          },
+          {
+            "group": "Getting Started",
             "pages": [
-              "index",
-              "quickstart",
-              "development"
+              "getting-started/installation",
+              "getting-started/configuration",
+              "getting-started/database-setup"
             ]
           },
           {
-            "group": "Customization",
+            "group": "Core Concepts",
             "pages": [
-              "essentials/settings",
-              "essentials/navigation"
+              "concepts/authentication",
+              "concepts/rate-limiting",
+              "concepts/error-handling"
             ]
           },
           {
-            "group": "Writing content",
+            "group": "Guides",
             "pages": [
-              "essentials/markdown",
-              "essentials/code",
-              "essentials/images",
-              "essentials/reusable-snippets"
-            ]
-          },
-          {
-            "group": "AI tools",
-            "pages": [
-              "ai-tools/cursor",
-              "ai-tools/claude-code",
-              "ai-tools/windsurf"
+              "guides/user-management",
+              "guides/food-diary",
+              "guides/symptoms-tracking",
+              "guides/insights-analytics"
             ]
           }
         ]
       },
       {
-        "tab": "API reference",
+        "tab": "API Reference",
         "groups": [
           {
-            "group": "API documentation",
+            "group": "Authentication",
             "pages": [
-              "api-reference/introduction"
+              "api/auth/overview",
+              "api/auth/register",
+              "api/auth/login",
+              "api/auth/refresh-token",
+              "api/auth/logout"
             ]
           },
           {
-            "group": "Endpoint examples",
+            "group": "Profile",
             "pages": [
-              "api-reference/endpoint/get",
-              "api-reference/endpoint/create",
-              "api-reference/endpoint/delete",
-              "api-reference/endpoint/webhook"
+              "api/profile/get-profile",
+              "api/profile/update-profile",
+              "api/profile/change-email",
+              "api/profile/change-password",
+              "api/profile/diet-settings"
+            ]
+          },
+          {
+            "group": "Foods",
+            "pages": [
+              "api/foods/search-foods",
+              "api/foods/get-food",
+              "api/foods/categories",
+              "api/foods/filters"
+            ]
+          },
+          {
+            "group": "Diary",
+            "pages": [
+              "api/diary/list-entries",
+              "api/diary/create-meal",
+              "api/diary/create-symptom",
+              "api/diary/update-entry",
+              "api/diary/delete-entry",
+              "api/diary/day-summary",
+              "api/diary/month-summary"
+            ]
+          },
+          {
+            "group": "Problematic Foods",
+            "pages": [
+              "api/problematic-foods/list",
+              "api/problematic-foods/mark-as-bad",
+              "api/problematic-foods/remove"
+            ]
+          },
+          {
+            "group": "Insights",
+            "pages": [
+              "api/insights/highlights",
+              "api/insights/weekly-summary",
+              "api/insights/discoveries"
+            ]
+          },
+          {
+            "group": "News & Content",
+            "pages": [
+              "api/news/list",
+              "api/news/get-article",
+              "api/news/categories"
+            ]
+          },
+          {
+            "group": "Achievements",
+            "pages": [
+              "api/achievements/list",
+              "api/achievements/user-progress"
+            ]
+          },
+          {
+            "group": "Admin",
+            "pages": [
+              "api/admin/overview",
+              "api/admin/users",
+              "api/admin/system-settings"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Resources",
+        "groups": [
+          {
+            "group": "Additional Resources",
+            "pages": [
+              "resources/deployment",
+              "resources/security",
+              "resources/contributing",
+              "resources/changelog"
             ]
           }
         ]
       }
-    ],
-    "global": {
-      "anchors": [
-        {
-          "anchor": "Documentation",
-          "href": "https://mintlify.com/docs",
-          "icon": "book-open-cover"
-        },
-        {
-          "anchor": "Blog",
-          "href": "https://mintlify.com/blog",
-          "icon": "newspaper"
-        }
-      ]
-    }
-  },
-  "logo": {
-    "light": "/logo/light.svg",
-    "dark": "/logo/dark.svg"
-  },
-  "navbar": {
-    "links": [
-      {
-        "label": "Support",
-        "href": "mailto:hi@mintlify.com"
-      }
-    ],
-    "primary": {
-      "type": "button",
-      "label": "Dashboard",
-      "href": "https://dashboard.mintlify.com"
-    }
-  },
-  "contextual": {
-    "options": [
-     "copy",
-     "view",
-     "chatgpt",
-     "claude",
-     "perplexity",
-     "mcp",
-     "cursor",
-     "vscode"
-   ]
-  },
-  "footer": {
-    "socials": {
-      "x": "https://x.com/mintlify",
-      "github": "https://github.com/mintlify",
-      "linkedin": "https://linkedin.com/company/mintlify"
-    }
+    ]
   }
 }

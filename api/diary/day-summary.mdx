@@ -1,0 +1,151 @@
+---
+title: Get Day Summary
+description: Retrieve a summary of diary entries for a specific day including meal count, symptoms, and day status
+---
+
+## Endpoint
+
+```
+GET /diary/summary/day/:date
+```
+
+## Authentication
+
+This endpoint requires authentication via Bearer token.
+
+```bash
+Authorization: Bearer <token>
+```
+
+## Path Parameters
+
+<ParamField path="date" type="string" required>
+  Date in YYYY-MM-DD format (e.g., "2024-03-15")
+</ParamField>
+
+## Response
+
+<ResponseField name="success" type="boolean">
+  Indicates if the request was successful
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  Day summary data
+  
+  <ResponseField name="date" type="string">
+    The requested date in YYYY-MM-DD format
+  </ResponseField>
+  
+  <ResponseField name="mealCount" type="number">
+    Total number of meal entries logged on this day
+  </ResponseField>
+  
+  <ResponseField name="symptomCount" type="number">
+    Total number of symptom entries logged on this day
+  </ResponseField>
+  
+  <ResponseField name="worstIntensity" type="number" nullable>
+    Highest symptom intensity recorded (1-5), or null if no symptoms
+  </ResponseField>
+  
+  <ResponseField name="dayStatus" type="string">
+    Overall status of the day based on symptoms. Options: `great`, `good`, `okay`, `bad`, `terrible`
+  </ResponseField>
+  
+  <ResponseField name="problematicFoods" type="array">
+    List of foods marked as problematic or identified as triggers
+    
+    <ResponseField name="foodId" type="number">
+      Food database ID
+    </ResponseField>
+    
+    <ResponseField name="foodName" type="string">
+      Name of the food
+    </ResponseField>
+  </ResponseField>
+  
+  <ResponseField name="totalCalories" type="number" optional>
+    Total calories consumed (if nutritional tracking is enabled)
+  </ResponseField>
+  
+  <ResponseField name="entries" type="array" optional>
+    Array of all entries for the day (meals and symptoms)
+  </ResponseField>
+</ResponseField>
+
+## Examples
+
+### Get summary for a specific day
+
+```bash
+curl -X GET "https://api.ceboelha.com/diary/summary/day/2024-03-15" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+### Get today's summary
+
+```bash
+TODAY=$(date +%Y-%m-%d)
+curl -X GET "https://api.ceboelha.com/diary/summary/day/$TODAY" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+### Get summary for yesterday
+
+```bash
+YESTERDAY=$(date -d "yesterday" +%Y-%m-%d)
+curl -X GET "https://api.ceboelha.com/diary/summary/day/$YESTERDAY" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+<ResponseExample>
+```json
+{
+  "success": true,
+  "data": {
+    "date": "2024-03-15",
+    "mealCount": 4,
+    "symptomCount": 2,
+    "worstIntensity": 3,
+    "dayStatus": "okay",
+    "problematicFoods": [
+      {
+        "foodId": 3456,
+        "foodName": "Feijão preto"
+      },
+      {
+        "foodId": 7891,
+        "foodName": "Alho"
+      }
+    ],
+    "totalCalories": 1850
+  }
+}
+```
+</ResponseExample>
+
+## Day Status Calculation
+
+The `dayStatus` field is calculated based on symptom count and intensity:
+
+| Status | Criteria |
+|--------|----------|
+| `great` | No symptoms logged |
+| `good` | 1-2 symptoms with max intensity 1-2 |
+| `okay` | 1-3 symptoms with max intensity 3 |
+| `bad` | 3+ symptoms or max intensity 4 |
+| `terrible` | Multiple severe symptoms or max intensity 5 |
+
+## Use Cases
+
+### Daily Review
+Use this endpoint to display a summary of the user's day, showing how many meals were logged and whether they experienced any symptoms.
+
+### Calendar Views
+When displaying a calendar, fetch day summaries to show status indicators (colored dots or icons) for each day.
+
+### Trigger Identification
+The `problematicFoods` array helps identify which foods might have caused symptoms on a given day.
+
+### Progress Tracking
+Compare day summaries over time to track improvement in symptom frequency and intensity.

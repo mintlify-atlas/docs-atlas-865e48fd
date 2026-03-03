@@ -1,0 +1,246 @@
+---
+title: 'Get Discoveries'
+description: 'Retrieve identified patterns and correlations in user data'
+---
+
+## Overview
+
+This endpoint analyzes the user's diary data from the last 30 days to identify patterns, triggers, safe foods, and time-based correlations. Discoveries are sorted by confidence level and type.
+
+## Endpoint
+
+```
+GET /insights/discoveries
+```
+
+## Authentication
+
+This endpoint requires authentication via Bearer token.
+
+```
+Authorization: Bearer <access_token>
+```
+
+## Response
+
+<ResponseField name="success" type="boolean" required>
+  Indicates if the request was successful
+</ResponseField>
+
+<ResponseField name="data" type="array" required>
+  Array of discovery objects, sorted by confidence (high first) and type
+  
+  <Expandable title="Discovery Object">
+    <ResponseField name="id" type="string" required>
+      Unique identifier for the discovery
+    </ResponseField>
+    
+    <ResponseField name="type" type="string" required>
+      Type of discovery pattern. One of:
+      - `trigger` - Foods that appear to cause symptoms
+      - `time_pattern` - Time periods with higher symptom occurrence
+      - `combination` - Problematic food combinations
+      - `safe_food` - Foods consumed without negative reactions
+    </ResponseField>
+    
+    <ResponseField name="confidence" type="string" required>
+      Confidence level of the pattern:
+      - `high` - 5+ occurrences or strong correlation (>60%)
+      - `medium` - 3-4 occurrences or moderate correlation (40-60%)
+      - `low` - 2 occurrences or weak correlation
+    </ResponseField>
+    
+    <ResponseField name="title" type="string" required>
+      Brief title describing the discovery
+    </ResponseField>
+    
+    <ResponseField name="description" type="string" required>
+      Detailed explanation of the pattern found
+    </ResponseField>
+    
+    <ResponseField name="data" type="object" required>
+      Additional data specific to the discovery type
+      
+      <Expandable title="Data Object">
+        <ResponseField name="foods" type="array">
+          Array of food names involved in the pattern
+        </ResponseField>
+        
+        <ResponseField name="symptoms" type="array">
+          Array of symptom types associated with the pattern
+        </ResponseField>
+        
+        <ResponseField name="timeRange" type="string">
+          Time range in HH:MM - HH:MM format (for time_pattern type)
+        </ResponseField>
+        
+        <ResponseField name="occurrences" type="number" required>
+          Number of times this pattern was observed
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+    
+    <ResponseField name="discoveredAt" type="string" required>
+      Date when the pattern was first or last identified (YYYY-MM-DD format)
+    </ResponseField>
+    
+    <ResponseField name="isNew" type="boolean" required>
+      Whether this is a newly discovered pattern (discovered in last 7 days)
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Discovery Types
+
+### Trigger Foods
+Foods marked as problematic 2+ times. Includes:
+- Food name
+- Associated symptom types
+- Total number of incidents
+- Whether it's a recent discovery (last 7 days)
+
+**Confidence Levels:**
+- High: 5+ incidents
+- Medium: 3-4 incidents
+- Low: 2 incidents
+
+### Time Patterns
+Identifies time periods when symptoms occur most frequently (requires 5+ symptom entries).
+
+**Time Periods:**
+- Morning: 06:00 - 12:00
+- Afternoon: 12:00 - 18:00
+- Evening: 18:00 - 22:00
+- Night: 22:00 - 06:00
+
+**Detection Criteria:**
+- Pattern shown only if >40% of symptoms occur in one period
+- Minimum 3 occurrences required
+
+**Confidence Levels:**
+- High: >60% of symptoms in one period
+- Medium: 40-60% of symptoms in one period
+
+### Safe Foods
+Foods consumed 5+ times without being marked as problematic. Shows top 3 most consumed safe foods.
+
+**Confidence Levels:**
+- High: Consumed 10+ times without issues
+- Medium: Consumed 5-9 times without issues
+
+### Combination Patterns
+Problematic food combinations (future feature - currently not implemented in the service).
+
+## Example Request
+
+```bash
+curl -X GET https://api.ceboelha.com/insights/discoveries \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+```
+
+## Example Response
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "507f1f77bcf86cd799439011",
+      "type": "trigger",
+      "confidence": "high",
+      "title": "você marcou leite",
+      "description": "parece que leite não combina muito... você anotou algumas vezes.",
+      "data": {
+        "foods": ["Leite"],
+        "symptoms": ["bloating", "cramps", "diarrhea"],
+        "occurrences": 6
+      },
+      "discoveredAt": "2026-03-01",
+      "isNew": true
+    },
+    {
+      "id": "507f1f77bcf86cd799439012",
+      "type": "time_pattern",
+      "confidence": "high",
+      "title": "mais anotações à noite",
+      "description": "a maioria das suas anotações são entre 18h e 22h (noite).",
+      "data": {
+        "timeRange": "18:00 - 22:00",
+        "occurrences": 15
+      },
+      "discoveredAt": "2026-03-03",
+      "isNew": false
+    },
+    {
+      "id": "507f1f77bcf86cd799439013",
+      "type": "safe_food",
+      "confidence": "high",
+      "title": "arroz tá de boa!",
+      "description": "você comeu arroz várias vezes e nunca marcou nada negativo.",
+      "data": {
+        "foods": ["Arroz"],
+        "occurrences": 12
+      },
+      "discoveredAt": "2026-03-03",
+      "isNew": false
+    },
+    {
+      "id": "507f1f77bcf86cd799439014",
+      "type": "trigger",
+      "confidence": "medium",
+      "title": "você marcou feijão",
+      "description": "parece que feijão não combina muito... você anotou algumas vezes.",
+      "data": {
+        "foods": ["Feijão"],
+        "symptoms": ["gas", "bloating"],
+        "occurrences": 3
+      },
+      "discoveredAt": "2026-02-28",
+      "isNew": false
+    }
+  ]
+}
+```
+
+## Understanding Patterns
+
+### Trigger Identification
+Triggers are identified from the ProblematicFoods collection, which tracks foods users have manually marked as causing symptoms. The system aggregates:
+- Total incidents across all markings
+- Unique symptom types experienced
+- Most recent incident date
+
+### Time Pattern Analysis
+The system buckets all symptom entries by hour of day into 4 periods, then calculates what percentage fall into each bucket. Only significant patterns (>40% concentration) are reported.
+
+### Safe Food Detection
+The system tracks food consumption frequency across all meal entries and cross-references with problematic food markings. Foods with high consumption but no negative marks are identified as safe.
+
+## Error Responses
+
+### 401 Unauthorized
+
+Returned when the request is missing or has an invalid authentication token.
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "UNAUTHORIZED",
+    "message": "Invalid or missing authentication token"
+  }
+}
+```
+
+## Implementation Notes
+
+- Analysis uses data from the last 30 days only
+- Discoveries are sorted first by confidence (high > medium > low), then by type priority (trigger > combination > time_pattern > safe_food)
+- New discoveries are those with `lastIncident` within the last 7 days (for triggers)
+- Time patterns and safe foods are not marked as new
+- Minimum thresholds ensure patterns are statistically meaningful:
+  - Triggers: 2+ incidents
+  - Time patterns: 5+ symptoms with >40% in one period
+  - Safe foods: 5+ consumptions with no marks
+- Food IDs are used internally but food names are displayed to users
+- The system automatically handles edge cases (no data, insufficient data, etc.)

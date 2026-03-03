@@ -1,0 +1,412 @@
+---
+title: 'Admin - System Settings'
+description: 'Admin endpoints for managing system-wide settings'
+---
+
+<Warning>
+  All admin endpoints require authentication with an **admin role**.
+</Warning>
+
+## Get System Settings
+
+Retrieve current system settings.
+
+### Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -X GET 'https://api.ceboelha.com/admin/settings' \
+  -H 'Authorization: Bearer YOUR_ADMIN_TOKEN' \
+  -H 'Content-Type: application/json'
+```
+
+```javascript JavaScript
+const response = await fetch('https://api.ceboelha.com/admin/settings', {
+  method: 'GET',
+  headers: {
+    'Authorization': 'Bearer YOUR_ADMIN_TOKEN',
+    'Content-Type': 'application/json'
+  }
+});
+
+const data = await response.json();
+```
+
+```python Python
+import requests
+
+headers = {
+    'Authorization': 'Bearer YOUR_ADMIN_TOKEN',
+    'Content-Type': 'application/json'
+}
+
+response = requests.get(
+    'https://api.ceboelha.com/admin/settings',
+    headers=headers
+)
+
+data = response.json()
+```
+</CodeGroup>
+
+### Response
+
+<ResponseField name="success" type="boolean" required>
+  Indicates if the request was successful
+</ResponseField>
+
+<ResponseField name="data" type="object" required>
+  System settings object
+  
+  <Expandable title="Settings Object">
+    <ResponseField name="maintenance" type="object">
+      Maintenance mode settings
+      
+      <Expandable title="Maintenance">
+        <ResponseField name="enabled" type="boolean">
+          Whether maintenance mode is active
+        </ResponseField>
+        
+        <ResponseField name="message" type="string">
+          Message to display during maintenance
+        </ResponseField>
+        
+        <ResponseField name="estimatedEnd" type="string">
+          Estimated end time (ISO 8601)
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+    
+    <ResponseField name="features" type="object">
+      Feature flags
+      
+      <Expandable title="Features">
+        <ResponseField name="achievements" type="boolean">
+          Enable/disable achievements feature
+        </ResponseField>
+        
+        <ResponseField name="news" type="boolean">
+          Enable/disable news and articles
+        </ResponseField>
+        
+        <ResponseField name="social" type="boolean">
+          Enable/disable social features
+        </ResponseField>
+        
+        <ResponseField name="ai_insights" type="boolean">
+          Enable/disable AI-powered insights
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+    
+    <ResponseField name="limits" type="object">
+      System limits and quotas
+      
+      <Expandable title="Limits">
+        <ResponseField name="max_diary_entries_per_day" type="integer">
+          Maximum diary entries per user per day
+        </ResponseField>
+        
+        <ResponseField name="max_foods_per_meal" type="integer">
+          Maximum foods per meal entry
+        </ResponseField>
+        
+        <ResponseField name="max_file_upload_size_mb" type="integer">
+          Maximum file upload size in MB
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+    
+    <ResponseField name="notifications" type="object">
+      Notification settings
+      
+      <Expandable title="Notifications">
+        <ResponseField name="email_enabled" type="boolean">
+          Whether email notifications are enabled
+        </ResponseField>
+        
+        <ResponseField name="push_enabled" type="boolean">
+          Whether push notifications are enabled
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+    
+    <ResponseField name="updatedAt" type="string">
+      ISO 8601 timestamp of last update
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Response Example
+
+```json
+{
+  "success": true,
+  "data": {
+    "maintenance": {
+      "enabled": false,
+      "message": "System maintenance in progress. We'll be back soon!",
+      "estimatedEnd": null
+    },
+    "features": {
+      "achievements": true,
+      "news": true,
+      "social": false,
+      "ai_insights": true
+    },
+    "limits": {
+      "max_diary_entries_per_day": 20,
+      "max_foods_per_meal": 30,
+      "max_file_upload_size_mb": 5
+    },
+    "notifications": {
+      "email_enabled": true,
+      "push_enabled": true
+    },
+    "updatedAt": "2024-03-01T10:00:00Z"
+  }
+}
+```
+
+---
+
+## Update System Settings
+
+Update system settings (partial update supported).
+
+### Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -X PATCH 'https://api.ceboelha.com/admin/settings' \
+  -H 'Authorization: Bearer YOUR_ADMIN_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "maintenance": {
+      "enabled": true,
+      "message": "Scheduled maintenance from 2-4 AM UTC",
+      "estimatedEnd": "2024-03-02T04:00:00Z"
+    },
+    "features": {
+      "social": true
+    }
+  }'
+```
+
+```javascript JavaScript
+const response = await fetch('https://api.ceboelha.com/admin/settings', {
+  method: 'PATCH',
+  headers: {
+    'Authorization': 'Bearer YOUR_ADMIN_TOKEN',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    maintenance: {
+      enabled: true,
+      message: 'Scheduled maintenance from 2-4 AM UTC',
+      estimatedEnd: '2024-03-02T04:00:00Z'
+    },
+    features: {
+      social: true
+    }
+  })
+});
+
+const data = await response.json();
+```
+
+```python Python
+import requests
+
+headers = {
+    'Authorization': 'Bearer YOUR_ADMIN_TOKEN',
+    'Content-Type': 'application/json'
+}
+
+data = {
+    'maintenance': {
+        'enabled': True,
+        'message': 'Scheduled maintenance from 2-4 AM UTC',
+        'estimatedEnd': '2024-03-02T04:00:00Z'
+    },
+    'features': {
+        'social': True
+    }
+}
+
+response = requests.patch(
+    'https://api.ceboelha.com/admin/settings',
+    headers=headers,
+    json=data
+)
+
+result = response.json()
+```
+</CodeGroup>
+
+### Request Body
+
+All fields are optional. Only include settings you want to update. Nested objects are merged.
+
+<ParamField body="maintenance" type="object">
+  Maintenance mode settings
+  
+  <Expandable title="Maintenance">
+    <ParamField body="enabled" type="boolean">
+      Enable/disable maintenance mode
+    </ParamField>
+    
+    <ParamField body="message" type="string">
+      Message to display during maintenance
+    </ParamField>
+    
+    <ParamField body="estimatedEnd" type="string">
+      Estimated end time (ISO 8601 format)
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField body="features" type="object">
+  Feature flags
+  
+  <Expandable title="Features">
+    <ParamField body="achievements" type="boolean">
+      Enable/disable achievements
+    </ParamField>
+    
+    <ParamField body="news" type="boolean">
+      Enable/disable news articles
+    </ParamField>
+    
+    <ParamField body="social" type="boolean">
+      Enable/disable social features
+    </ParamField>
+    
+    <ParamField body="ai_insights" type="boolean">
+      Enable/disable AI insights
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField body="limits" type="object">
+  System limits
+  
+  <Expandable title="Limits">
+    <ParamField body="max_diary_entries_per_day" type="integer">
+      Maximum diary entries per user per day
+    </ParamField>
+    
+    <ParamField body="max_foods_per_meal" type="integer">
+      Maximum foods per meal
+    </ParamField>
+    
+    <ParamField body="max_file_upload_size_mb" type="integer">
+      Maximum file upload size in MB
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField body="notifications" type="object">
+  Notification settings
+  
+  <Expandable title="Notifications">
+    <ParamField body="email_enabled" type="boolean">
+      Enable/disable email notifications
+    </ParamField>
+    
+    <ParamField body="push_enabled" type="boolean">
+      Enable/disable push notifications
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+### Response
+
+<ResponseField name="success" type="boolean" required>
+  Indicates if the request was successful
+</ResponseField>
+
+<ResponseField name="data" type="object" required>
+  Updated system settings object
+</ResponseField>
+
+### Response Example
+
+```json
+{
+  "success": true,
+  "data": {
+    "maintenance": {
+      "enabled": true,
+      "message": "Scheduled maintenance from 2-4 AM UTC",
+      "estimatedEnd": "2024-03-02T04:00:00Z"
+    },
+    "features": {
+      "achievements": true,
+      "news": true,
+      "social": true,
+      "ai_insights": true
+    },
+    "limits": {
+      "max_diary_entries_per_day": 20,
+      "max_foods_per_meal": 30,
+      "max_file_upload_size_mb": 5
+    },
+    "notifications": {
+      "email_enabled": true,
+      "push_enabled": true
+    },
+    "updatedAt": "2024-03-01T15:30:00Z"
+  }
+}
+```
+
+---
+
+## Maintenance Mode
+
+When maintenance mode is enabled:
+
+- All non-admin users receive a `503 Service Unavailable` response
+- The maintenance message is displayed to users
+- Admin users can still access all endpoints
+- The system automatically disables maintenance mode after `estimatedEnd` time (if set)
+
+### Maintenance Response Example
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "MAINTENANCE",
+    "message": "Scheduled maintenance from 2-4 AM UTC",
+    "estimatedEnd": "2024-03-02T04:00:00Z"
+  }
+}
+```
+
+---
+
+## Feature Flags
+
+Disabling features will:
+
+- **achievements**: Hide achievements section, stop tracking progress
+- **news**: Hide news/articles section from users
+- **social**: Disable social features (likes, comments, etc.)
+- **ai_insights**: Disable AI-powered insights and recommendations
+
+---
+
+## Notes
+
+- Settings changes are logged in the activity log
+- Maintenance mode changes take effect immediately
+- Feature flag changes may require users to refresh their app
+- Limit changes are validated and enforced on next request
+- Only admins can view and modify system settings
+
+## Related Endpoints
+
+- [Admin Overview](/api/admin/overview) - Dashboard and activity logs
+- [User Management](/api/admin/users) - Manage users

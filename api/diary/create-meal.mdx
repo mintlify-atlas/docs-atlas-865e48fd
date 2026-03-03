@@ -1,0 +1,286 @@
+---
+title: Create Meal Entry
+description: Log a new meal entry in the diary with foods and nutritional information
+---
+
+## Endpoint
+
+```
+POST /diary/meal
+```
+
+## Authentication
+
+This endpoint requires authentication via Bearer token.
+
+```bash
+Authorization: Bearer <token>
+```
+
+## Request Body
+
+<ParamField body="date" type="string" required>
+  Date of the meal in YYYY-MM-DD format (e.g., "2024-03-15")
+</ParamField>
+
+<ParamField body="meal" type="object" required>
+  Meal data object
+  
+  <ParamField body="type" type="string" required>
+    Type of meal: `breakfast`, `lunch`, `dinner`, or `snack`
+  </ParamField>
+  
+  <ParamField body="time" type="string" required>
+    Time of the meal in HH:MM format (e.g., "08:30")
+  </ParamField>
+  
+  <ParamField body="foods" type="array" required>
+    Array of foods consumed (minimum 1 food required)
+    
+    <ParamField body="foodId" type="number" required>
+      Food database ID
+    </ParamField>
+    
+    <ParamField body="foodName" type="string" required>
+      Name of the food
+    </ParamField>
+    
+    <ParamField body="portion" type="string">
+      Portion description (e.g., "1 cup", "2 slices")
+    </ParamField>
+    
+    <ParamField body="quantity_g" type="number">
+      Quantity in grams
+    </ParamField>
+    
+    <ParamField body="markedAsBad" type="boolean">
+      Mark this food as potentially problematic
+    </ParamField>
+    
+    <ParamField body="calculatedNutrition" type="object">
+      Calculated nutritional information
+      
+      <ParamField body="calories" type="number">Calories in kcal</ParamField>
+      <ParamField body="carbs" type="number">Carbohydrates in grams</ParamField>
+      <ParamField body="protein" type="number">Protein in grams</ParamField>
+      <ParamField body="fat" type="number">Fat in grams</ParamField>
+      <ParamField body="sugar" type="number">Sugar in grams</ParamField>
+      <ParamField body="fiber" type="number">Fiber in grams</ParamField>
+      <ParamField body="sodium" type="number">Sodium in milligrams</ParamField>
+    </ParamField>
+  </ParamField>
+  
+  <ParamField body="notes" type="string">
+    Additional notes about the meal (max 500 characters)
+  </ParamField>
+</ParamField>
+
+## Response
+
+<ResponseField name="success" type="boolean">
+  Indicates if the meal was successfully created
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  The created diary entry
+  
+  <ResponseField name="_id" type="string">
+    Entry ID (MongoDB ObjectId)
+  </ResponseField>
+  
+  <ResponseField name="userId" type="string">
+    User ID who created the entry
+  </ResponseField>
+  
+  <ResponseField name="date" type="string">
+    Entry date in YYYY-MM-DD format
+  </ResponseField>
+  
+  <ResponseField name="type" type="string">
+    Entry type (always "meal" for this endpoint)
+  </ResponseField>
+  
+  <ResponseField name="meal" type="object">
+    Complete meal data including all provided fields
+  </ResponseField>
+  
+  <ResponseField name="createdAt" type="string">
+    Timestamp when the entry was created
+  </ResponseField>
+  
+  <ResponseField name="updatedAt" type="string">
+    Timestamp when the entry was last updated
+  </ResponseField>
+</ResponseField>
+
+## Examples
+
+### Log a breakfast meal
+
+```bash
+curl -X POST "https://api.ceboelha.com/diary/meal" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "date": "2024-03-15",
+    "meal": {
+      "type": "breakfast",
+      "time": "08:30",
+      "foods": [
+        {
+          "foodId": 1234,
+          "foodName": "Aveia",
+          "portion": "1 xícara",
+          "quantity_g": 80,
+          "calculatedNutrition": {
+            "calories": 303,
+            "carbs": 54.8,
+            "protein": 10.7,
+            "fat": 5.3,
+            "sugar": 0.8,
+            "fiber": 8.2,
+            "sodium": 2
+          }
+        },
+        {
+          "foodId": 5678,
+          "foodName": "Leite sem lactose",
+          "portion": "200ml",
+          "quantity_g": 200,
+          "calculatedNutrition": {
+            "calories": 90,
+            "carbs": 9,
+            "protein": 6,
+            "fat": 3.5,
+            "sugar": 9,
+            "fiber": 0,
+            "sodium": 100
+          }
+        }
+      ],
+      "notes": "Primeira refeição após jejum intermitente"
+    }
+  }'
+```
+
+### Log a lunch with potentially problematic food
+
+```bash
+curl -X POST "https://api.ceboelha.com/diary/meal" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "date": "2024-03-15",
+    "meal": {
+      "type": "lunch",
+      "time": "12:30",
+      "foods": [
+        {
+          "foodId": 9012,
+          "foodName": "Arroz integral",
+          "portion": "1 xícara",
+          "quantity_g": 150
+        },
+        {
+          "foodId": 3456,
+          "foodName": "Feijão preto",
+          "portion": "1/2 xícara",
+          "quantity_g": 80,
+          "markedAsBad": true
+        },
+        {
+          "foodId": 7890,
+          "foodName": "Frango grelhado",
+          "portion": "150g",
+          "quantity_g": 150
+        }
+      ],
+      "notes": "Feijão pode causar gases"
+    }
+  }'
+```
+
+### Log a simple snack
+
+```bash
+curl -X POST "https://api.ceboelha.com/diary/meal" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "date": "2024-03-15",
+    "meal": {
+      "type": "snack",
+      "time": "15:30",
+      "foods": [
+        {
+          "foodId": 2468,
+          "foodName": "Maçã verde",
+          "portion": "1 unidade média",
+          "quantity_g": 150
+        }
+      ]
+    }
+  }'
+```
+
+<ResponseExample>
+```json
+{
+  "success": true,
+  "data": {
+    "_id": "65f1a2b3c4d5e6f7a8b9c0d1",
+    "userId": "65e1a2b3c4d5e6f7a8b9c0d1",
+    "date": "2024-03-15",
+    "type": "meal",
+    "meal": {
+      "type": "breakfast",
+      "time": "08:30",
+      "foods": [
+        {
+          "foodId": 1234,
+          "foodName": "Aveia",
+          "portion": "1 xícara",
+          "quantity_g": 80,
+          "calculatedNutrition": {
+            "calories": 303,
+            "carbs": 54.8,
+            "protein": 10.7,
+            "fat": 5.3,
+            "sugar": 0.8,
+            "fiber": 8.2,
+            "sodium": 2
+          }
+        },
+        {
+          "foodId": 5678,
+          "foodName": "Leite sem lactose",
+          "portion": "200ml",
+          "quantity_g": 200,
+          "calculatedNutrition": {
+            "calories": 90,
+            "carbs": 9,
+            "protein": 6,
+            "fat": 3.5,
+            "sugar": 9,
+            "fiber": 0,
+            "sodium": 100
+          }
+        }
+      ],
+      "notes": "Primeira refeição após jejum intermitente"
+    },
+    "createdAt": "2024-03-15T08:35:22.000Z",
+    "updatedAt": "2024-03-15T08:35:22.000Z"
+  }
+}
+```
+</ResponseExample>
+
+## Meal Types
+
+| Type | Description |
+|------|-------------|
+| `breakfast` | Morning meal |
+| `lunch` | Midday meal |
+| `dinner` | Evening meal |
+| `snack` | Light meal between main meals |

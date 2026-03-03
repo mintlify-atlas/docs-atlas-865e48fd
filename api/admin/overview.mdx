@@ -1,0 +1,332 @@
+---
+title: 'Admin Overview'
+description: 'Admin panel endpoints for managing the Ceboelha platform'
+---
+
+<Warning>
+  All admin endpoints require authentication with an **admin role**. Users with the `user` role will receive a `403 Forbidden` error.
+</Warning>
+
+## Authentication
+
+Admin endpoints require a valid Bearer token from a user with the `admin` role.
+
+```bash
+Authorization: Bearer YOUR_ADMIN_ACCESS_TOKEN
+```
+
+You can obtain an access token by logging in with admin credentials via the [Login](/api/auth/login) endpoint.
+
+## Dashboard Statistics
+
+Get comprehensive statistics for the admin dashboard.
+
+### Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -X GET 'https://api.ceboelha.com/admin/dashboard/stats' \
+  -H 'Authorization: Bearer YOUR_ADMIN_TOKEN' \
+  -H 'Content-Type: application/json'
+```
+
+```javascript JavaScript
+const response = await fetch('https://api.ceboelha.com/admin/dashboard/stats', {
+  method: 'GET',
+  headers: {
+    'Authorization': 'Bearer YOUR_ADMIN_TOKEN',
+    'Content-Type': 'application/json'
+  }
+});
+
+const data = await response.json();
+```
+
+```python Python
+import requests
+
+headers = {
+    'Authorization': 'Bearer YOUR_ADMIN_TOKEN',
+    'Content-Type': 'application/json'
+}
+
+response = requests.get(
+    'https://api.ceboelha.com/admin/dashboard/stats',
+    headers=headers
+)
+
+data = response.json()
+```
+</CodeGroup>
+
+### Response
+
+<ResponseField name="success" type="boolean" required>
+  Indicates if the request was successful
+</ResponseField>
+
+<ResponseField name="data" type="object" required>
+  Dashboard statistics
+  
+  <Expandable title="Stats Object">
+    <ResponseField name="users" type="object">
+      User statistics
+      
+      <Expandable title="User Stats">
+        <ResponseField name="total" type="integer">
+          Total number of users
+        </ResponseField>
+        
+        <ResponseField name="active" type="integer">
+          Number of active users
+        </ResponseField>
+        
+        <ResponseField name="new_today" type="integer">
+          New users registered today
+        </ResponseField>
+        
+        <ResponseField name="new_week" type="integer">
+          New users registered this week
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+    
+    <ResponseField name="content" type="object">
+      Content statistics
+      
+      <Expandable title="Content Stats">
+        <ResponseField name="total_articles" type="integer">
+          Total number of articles
+        </ResponseField>
+        
+        <ResponseField name="published_articles" type="integer">
+          Number of published articles
+        </ResponseField>
+        
+        <ResponseField name="total_foods" type="integer">
+          Total number of foods in database
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+    
+    <ResponseField name="activity" type="object">
+      Activity statistics
+      
+      <Expandable title="Activity Stats">
+        <ResponseField name="meals_logged_today" type="integer">
+          Meals logged today
+        </ResponseField>
+        
+        <ResponseField name="symptoms_logged_today" type="integer">
+          Symptoms logged today
+        </ResponseField>
+        
+        <ResponseField name="total_diary_entries" type="integer">
+          Total diary entries in system
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Response Example
+
+```json
+{
+  "success": true,
+  "data": {
+    "users": {
+      "total": 1543,
+      "active": 1421,
+      "new_today": 12,
+      "new_week": 87
+    },
+    "content": {
+      "total_articles": 145,
+      "published_articles": 132,
+      "total_foods": 5432
+    },
+    "activity": {
+      "meals_logged_today": 234,
+      "symptoms_logged_today": 156,
+      "total_diary_entries": 45678
+    }
+  }
+}
+```
+
+---
+
+## Activity Log
+
+Get paginated activity logs with optional filters.
+
+### Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -X GET 'https://api.ceboelha.com/admin/activity-log?page=1&limit=20&type=user' \
+  -H 'Authorization: Bearer YOUR_ADMIN_TOKEN' \
+  -H 'Content-Type: application/json'
+```
+
+```javascript JavaScript
+const response = await fetch('https://api.ceboelha.com/admin/activity-log?page=1&limit=20', {
+  method: 'GET',
+  headers: {
+    'Authorization': 'Bearer YOUR_ADMIN_TOKEN',
+    'Content-Type': 'application/json'
+  }
+});
+
+const data = await response.json();
+```
+</CodeGroup>
+
+### Query Parameters
+
+<ParamField query="page" type="integer" default="1">
+  Page number for pagination
+</ParamField>
+
+<ParamField query="limit" type="integer" default="20">
+  Number of logs per page (1-100)
+</ParamField>
+
+<ParamField query="type" type="string">
+  Filter by activity type: `user`, `content`, `food`, `admin`, or `all`
+</ParamField>
+
+<ParamField query="userId" type="string">
+  Filter by specific user ID
+</ParamField>
+
+<ParamField query="startDate" type="string">
+  Filter logs from this date (ISO 8601 format)
+</ParamField>
+
+<ParamField query="endDate" type="string">
+  Filter logs until this date (ISO 8601 format)
+</ParamField>
+
+### Response
+
+<ResponseField name="success" type="boolean" required>
+  Indicates if the request was successful
+</ResponseField>
+
+<ResponseField name="data" type="array" required>
+  Array of activity log objects
+</ResponseField>
+
+<ResponseField name="pagination" type="object" required>
+  Pagination information (page, limit, total, totalPages, hasMore)
+</ResponseField>
+
+### Response Example
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "60d5ec49f1a4c3b6d8e9f0a1",
+      "type": "user",
+      "action": "user_created",
+      "details": "New user registered",
+      "userId": "60d5ec49f1a4c3b6d8e9f0a2",
+      "userName": "John Doe",
+      "userEmail": "john@example.com",
+      "ip_address": "192.168.1.1",
+      "user_agent": "Mozilla/5.0...",
+      "timestamp": "2024-03-01T10:30:00Z"
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 20,
+    "total": 543,
+    "totalPages": 28,
+    "hasMore": true
+  }
+}
+```
+
+---
+
+## Analytics
+
+Get analytics data for the specified period.
+
+### Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -X GET 'https://api.ceboelha.com/admin/analytics?period=week' \
+  -H 'Authorization: Bearer YOUR_ADMIN_TOKEN' \
+  -H 'Content-Type: application/json'
+```
+</CodeGroup>
+
+### Query Parameters
+
+<ParamField query="period" type="string" default="week">
+  Time period for analytics: `day`, `week`, or `month`
+</ParamField>
+
+### Response
+
+<ResponseField name="success" type="boolean" required>
+  Indicates if the request was successful
+</ResponseField>
+
+<ResponseField name="data" type="object" required>
+  Analytics data including time series data for users, entries, and engagement metrics
+</ResponseField>
+
+---
+
+## Rate Limiting
+
+Admin endpoints have enhanced rate limiting:
+
+- **Read operations** (GET): 100 requests per minute
+- **Write operations** (POST, PATCH, DELETE): 30 requests per minute
+
+## Error Responses
+
+### Unauthorized (401)
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "UNAUTHORIZED",
+    "message": "Autenticação necessária"
+  }
+}
+```
+
+### Forbidden (403)
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "FORBIDDEN",
+    "message": "Acesso restrito a administradores"
+  }
+}
+```
+
+## Available Admin Sections
+
+The admin panel provides management for:
+
+- **[Users](/api/admin/users)** - Create, update, delete, and manage users
+- **[System Settings](/api/admin/system-settings)** - Configure system-wide settings
+- **News Articles** - Manage news and recipe content
+- **Foods** - Manage food database
+- **Diary Entries** - View and moderate user diary entries
+- **Problematic Foods** - View user-reported problematic foods
+- **Achievements** - Manage achievement definitions

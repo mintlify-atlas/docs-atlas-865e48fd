@@ -1,0 +1,328 @@
+---
+title: User Management
+description: Complete guide to user registration, authentication, and profile management workflows
+---
+
+This guide covers the complete user management workflows in the Ceboelha API, from registration to profile updates and account management.
+
+## Registration Workflow
+
+Create a new user account with email, password, and name.
+
+<Steps>
+  <Step title="Register a new user">
+    Send a POST request to `/auth/register` with user credentials.
+
+    ```bash
+    curl -X POST https://api.ceboelha.com/auth/register \
+      -H "Content-Type: application/json" \
+      -d '{
+        "email": "user@example.com",
+        "password": "SecurePass123!",
+        "name": "Maria Silva"
+      }'
+    ```
+
+    <Note>
+      Password must meet these requirements:
+      - Minimum 8 characters
+      - At least 1 uppercase letter
+      - At least 1 lowercase letter
+      - At least 1 number
+      - At least 1 special character (!@#$%^&*...)
+    </Note>
+  </Step>
+
+  <Step title="Receive authentication tokens">
+    The API returns the user object and sets authentication tokens in httpOnly cookies.
+
+    ```json
+    {
+      "success": true,
+      "data": {
+        "user": {
+          "_id": "507f1f77bcf86cd799439011",
+          "email": "user@example.com",
+          "name": "Maria Silva",
+          "role": "user",
+          "preferences": {
+            "theme": "system",
+            "notifications": true,
+            "soundEnabled": true,
+            "language": "pt-BR",
+            "fodmapPhase": "elimination"
+          },
+          "stats": {
+            "daysUsingApp": 0,
+            "totalMealsLogged": 0,
+            "totalSymptomsLogged": 0,
+            "currentStreak": 0,
+            "longestStreak": 0,
+            "achievementsUnlocked": 0,
+            "foodsTested": 0,
+            "triggersIdentified": 0
+          },
+          "createdAt": "2026-03-03T10:00:00.000Z"
+        },
+        "expiresIn": 900
+      },
+      "message": "Conta criada com sucesso! 🐰"
+    }
+    ```
+
+    <Tip>
+      Tokens are automatically sent via secure httpOnly cookies. You don't need to handle them manually - they'll be included in subsequent requests.
+    </Tip>
+  </Step>
+
+  <Step title="Start using the API">
+    You're now authenticated! The cookies will be automatically included in your requests.
+
+    ```bash
+    # Verify your authentication
+    curl https://api.ceboelha.com/auth/me \
+      --cookie "ceboelha_access_token=...; ceboelha_refresh_token=..."
+    ```
+  </Step>
+</Steps>
+
+## Login Workflow
+
+Authenticate an existing user.
+
+<Steps>
+  <Step title="Login with credentials">
+    ```bash
+    curl -X POST https://api.ceboelha.com/auth/login \
+      -H "Content-Type: application/json" \
+      -d '{
+        "email": "user@example.com",
+        "password": "SecurePass123!"
+      }'
+    ```
+
+    <Note>
+      After 5 failed login attempts, the account is locked for 15 minutes to prevent brute force attacks.
+    </Note>
+  </Step>
+
+  <Step title="Receive session tokens">
+    Similar to registration, you'll receive user data and httpOnly cookies for authentication.
+  </Step>
+</Steps>
+
+## Token Refresh Workflow
+
+Refresh your access token before it expires.
+
+```bash
+curl -X POST https://api.ceboelha.com/auth/refresh \
+  -H "Content-Type: application/json" \
+  -d '{
+    "refreshToken": "your-128-char-hex-refresh-token"
+  }'
+```
+
+<Tip>
+  The refresh token is rotated on each refresh for security. The old token is invalidated and a new one is issued.
+</Tip>
+
+## Profile Management
+
+### Get Current Profile
+
+Retrieve the authenticated user's profile:
+
+```bash
+curl https://api.ceboelha.com/profile \
+  --cookie "ceboelha_access_token=..."
+```
+
+### Update Profile
+
+Update name, avatar, or preferences:
+
+```bash
+curl -X PATCH https://api.ceboelha.com/profile \
+  --cookie "ceboelha_access_token=..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Maria Santos",
+    "preferences": {
+      "theme": "dark",
+      "notifications": true,
+      "fodmapPhase": "reintroduction"
+    }
+  }'
+```
+
+**Available preferences:**
+- `theme`: `"light"`, `"dark"`, or `"system"`
+- `notifications`: `true` or `false`
+- `soundEnabled`: `true` or `false`
+- `language`: `"pt-BR"` or `"en"`
+- `fodmapPhase`: `"elimination"`, `"reintroduction"`, or `"personalization"`
+
+### Change Email
+
+Change account email (requires password confirmation):
+
+```bash
+curl -X POST https://api.ceboelha.com/profile/email \
+  --cookie "ceboelha_access_token=..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "newEmail": "newemail@example.com",
+    "password": "SecurePass123!"
+  }'
+```
+
+### Change Password
+
+Update account password (revokes all other sessions):
+
+```bash
+curl -X POST https://api.ceboelha.com/profile/password \
+  --cookie "ceboelha_access_token=..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "currentPassword": "SecurePass123!",
+    "newPassword": "NewSecurePass456!"
+  }'
+```
+
+<Note>
+  For security, changing your password automatically revokes all active sessions on other devices.
+</Note>
+
+### Upload Avatar
+
+Upload a profile picture:
+
+```bash
+curl -X POST https://api.ceboelha.com/profile/avatar \
+  --cookie "ceboelha_access_token=..." \
+  -F "avatar=@profile-pic.jpg"
+```
+
+Accepted formats: JPG, PNG, WebP (max 5MB)
+
+## Diet Settings Management
+
+### Get Diet Settings
+
+Retrieve current diet configuration:
+
+```bash
+curl https://api.ceboelha.com/profile/diet-settings \
+  --cookie "ceboelha_access_token=..."
+```
+
+### Update Diet Settings
+
+Configure daily macro limits and diary mode:
+
+```bash
+curl -X PATCH https://api.ceboelha.com/profile/diet-settings \
+  --cookie "ceboelha_access_token=..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "enabled": true,
+    "preset": "balanced",
+    "limits": {
+      "calories": 2000,
+      "carbs": 250,
+      "protein": 150,
+      "fat": 67,
+      "sugar": 50,
+      "fiber": 30,
+      "sodium": 2300
+    },
+    "showRemaining": true,
+    "showProgressBars": true,
+    "warningThreshold": 80,
+    "diaryMode": "detailed"
+  }'
+```
+
+**Available presets:**
+- `custom` - Custom limits set by user
+- `maintenance` - Maintain current weight
+- `cutting` - Weight loss
+- `bulking` - Muscle gain
+- `lowcarb` - Low carbohydrate diet
+- `balanced` - Balanced macros
+
+**Diary modes:**
+- `quick` - Log foods only
+- `detailed` - Include macro tracking
+
+## Session Management
+
+### List Active Sessions
+
+View all devices/browsers where you're logged in:
+
+```bash
+curl https://api.ceboelha.com/auth/sessions \
+  --cookie "ceboelha_access_token=..."
+```
+
+### Revoke Specific Session
+
+Logout from a specific device:
+
+```bash
+curl -X DELETE https://api.ceboelha.com/auth/sessions/507f1f77bcf86cd799439011 \
+  --cookie "ceboelha_access_token=..."
+```
+
+### Logout
+
+Logout from current device:
+
+```bash
+curl -X POST https://api.ceboelha.com/auth/logout \
+  --cookie "ceboelha_access_token=..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "refreshToken": "your-refresh-token"
+  }'
+```
+
+Logout from all devices:
+
+```bash
+curl -X POST https://api.ceboelha.com/auth/logout \
+  --cookie "ceboelha_access_token=..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "allDevices": true
+  }'
+```
+
+## Account Deletion
+
+Permanently delete your account:
+
+```bash
+curl -X POST https://api.ceboelha.com/profile/delete \
+  --cookie "ceboelha_access_token=..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "password": "SecurePass123!"
+  }'
+```
+
+<Note>
+  Account deletion is permanent and cannot be undone. All user data, diary entries, and tracked foods will be permanently deleted.
+</Note>
+
+## Rate Limiting
+
+Authentication endpoints are rate-limited to prevent abuse:
+
+- `/auth/register`, `/auth/login`, `/auth/refresh`: 5 requests per 15 minutes
+- `/auth/sessions/:id`: 3 requests per 5 minutes
+
+Rate limits are tracked per IP address.

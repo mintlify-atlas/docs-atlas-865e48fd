@@ -1,0 +1,240 @@
+---
+title: List Diary Entries
+description: Retrieve diary entries with optional filters for date ranges and entry types
+---
+
+## Endpoint
+
+```
+GET /diary
+```
+
+## Authentication
+
+This endpoint requires authentication via Bearer token.
+
+```bash
+Authorization: Bearer <token>
+```
+
+## Query Parameters
+
+<ParamField query="date" type="string">
+  Filter entries by specific date in YYYY-MM-DD format (e.g., "2024-03-15")
+</ParamField>
+
+<ParamField query="startDate" type="string">
+  Start date for date range filter in YYYY-MM-DD format
+</ParamField>
+
+<ParamField query="endDate" type="string">
+  End date for date range filter in YYYY-MM-DD format
+</ParamField>
+
+<ParamField query="type" type="string">
+  Filter by entry type. Options: `meal`, `symptom`, `all`
+</ParamField>
+
+## Response
+
+<ResponseField name="success" type="boolean">
+  Indicates if the request was successful
+</ResponseField>
+
+<ResponseField name="data" type="array">
+  Array of diary entries
+  
+  <ResponseField name="_id" type="string">
+    Entry ID (MongoDB ObjectId)
+  </ResponseField>
+  
+  <ResponseField name="userId" type="string">
+    User ID who created the entry
+  </ResponseField>
+  
+  <ResponseField name="date" type="string">
+    Entry date in YYYY-MM-DD format
+  </ResponseField>
+  
+  <ResponseField name="type" type="string">
+    Entry type: `meal` or `symptom`
+  </ResponseField>
+  
+  <ResponseField name="meal" type="object" optional>
+    Meal data (only present when type is "meal")
+    
+    <ResponseField name="type" type="string">
+      Meal type: `breakfast`, `lunch`, `dinner`, or `snack`
+    </ResponseField>
+    
+    <ResponseField name="time" type="string">
+      Time in HH:MM format
+    </ResponseField>
+    
+    <ResponseField name="foods" type="array">
+      Array of foods consumed
+      
+      <ResponseField name="foodId" type="number">
+        Food database ID
+      </ResponseField>
+      
+      <ResponseField name="foodName" type="string">
+        Name of the food
+      </ResponseField>
+      
+      <ResponseField name="portion" type="string" optional>
+        Portion description
+      </ResponseField>
+      
+      <ResponseField name="quantity_g" type="number" optional>
+        Quantity in grams
+      </ResponseField>
+      
+      <ResponseField name="markedAsBad" type="boolean" optional>
+        Whether this food was marked as problematic
+      </ResponseField>
+      
+      <ResponseField name="calculatedNutrition" type="object" optional>
+        Calculated nutritional values
+        
+        <ResponseField name="calories" type="number">Calories (kcal)</ResponseField>
+        <ResponseField name="carbs" type="number">Carbohydrates (g)</ResponseField>
+        <ResponseField name="protein" type="number">Protein (g)</ResponseField>
+        <ResponseField name="fat" type="number">Fat (g)</ResponseField>
+        <ResponseField name="sugar" type="number">Sugar (g)</ResponseField>
+        <ResponseField name="fiber" type="number">Fiber (g)</ResponseField>
+        <ResponseField name="sodium" type="number">Sodium (mg)</ResponseField>
+      </ResponseField>
+    </ResponseField>
+    
+    <ResponseField name="notes" type="string" optional>
+      Additional notes about the meal
+    </ResponseField>
+  </ResponseField>
+  
+  <ResponseField name="symptom" type="object" optional>
+    Symptom data (only present when type is "symptom")
+    
+    <ResponseField name="type" type="string">
+      Symptom type: `bloating`, `gas`, `cramps`, `nausea`, `diarrhea`, `constipation`, `reflux`, `fatigue`, `headache`, `brain_fog`, or `other`
+    </ResponseField>
+    
+    <ResponseField name="intensity" type="number">
+      Intensity level from 1 (mild) to 5 (severe)
+    </ResponseField>
+    
+    <ResponseField name="time" type="string">
+      Time in HH:MM format
+    </ResponseField>
+    
+    <ResponseField name="duration" type="number" optional>
+      Duration in minutes
+    </ResponseField>
+    
+    <ResponseField name="notes" type="string" optional>
+      Additional notes about the symptom
+    </ResponseField>
+  </ResponseField>
+  
+  <ResponseField name="createdAt" type="string">
+    Timestamp when the entry was created
+  </ResponseField>
+  
+  <ResponseField name="updatedAt" type="string">
+    Timestamp when the entry was last updated
+  </ResponseField>
+</ResponseField>
+
+## Examples
+
+### Get all entries for a specific date
+
+```bash
+curl -X GET "https://api.ceboelha.com/diary?date=2024-03-15" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+### Get all meal entries in a date range
+
+```bash
+curl -X GET "https://api.ceboelha.com/diary?startDate=2024-03-01&endDate=2024-03-31&type=meal" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+### Get only symptom entries
+
+```bash
+curl -X GET "https://api.ceboelha.com/diary?type=symptom" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+<ResponseExample>
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "_id": "65f1a2b3c4d5e6f7a8b9c0d1",
+      "userId": "65e1a2b3c4d5e6f7a8b9c0d1",
+      "date": "2024-03-15",
+      "type": "meal",
+      "meal": {
+        "type": "breakfast",
+        "time": "08:30",
+        "foods": [
+          {
+            "foodId": 1234,
+            "foodName": "Aveia",
+            "portion": "1 xícara",
+            "quantity_g": 80,
+            "calculatedNutrition": {
+              "calories": 303,
+              "carbs": 54.8,
+              "protein": 10.7,
+              "fat": 5.3,
+              "sugar": 0.8,
+              "fiber": 8.2,
+              "sodium": 2
+            }
+          },
+          {
+            "foodId": 5678,
+            "foodName": "Banana",
+            "portion": "1 média",
+            "quantity_g": 120,
+            "markedAsBad": false,
+            "calculatedNutrition": {
+              "calories": 105,
+              "carbs": 27,
+              "protein": 1.3,
+              "fat": 0.4,
+              "sugar": 14.4,
+              "fiber": 3.1,
+              "sodium": 1
+            }
+          }
+        ],
+        "notes": "Primeira refeição após jejum"
+      },
+      "createdAt": "2024-03-15T08:35:22.000Z",
+      "updatedAt": "2024-03-15T08:35:22.000Z"
+    },
+    {
+      "_id": "65f1a2b3c4d5e6f7a8b9c0d2",
+      "userId": "65e1a2b3c4d5e6f7a8b9c0d1",
+      "date": "2024-03-15",
+      "type": "symptom",
+      "symptom": {
+        "type": "bloating",
+        "intensity": 3,
+        "time": "14:30",
+        "duration": 45,
+        "notes": "Começou após o almoço"
+      },
+      "createdAt": "2024-03-15T14:32:10.000Z",
+      "updatedAt": "2024-03-15T14:32:10.000Z"
+    }
+  ]
+}
+```
+</ResponseExample>

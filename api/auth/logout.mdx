@@ -1,0 +1,266 @@
+---
+title: 'Logout'
+description: 'Revoke tokens and end user session, with optional multi-device logout'
+---
+
+## Endpoint
+
+<ParamField path="method" type="string" required>
+  POST
+</ParamField>
+
+<ParamField path="url" type="string" required>
+  /auth/logout
+</ParamField>
+
+<ParamField path="authentication" type="string" required>
+  Required - Must include valid access token in cookie
+</ParamField>
+
+## Request
+
+### Headers
+
+<ParamField header="Content-Type" type="string" required>
+  application/json
+</ParamField>
+
+<ParamField header="Cookie" type="string" required>
+  Must include `accessToken` cookie for authentication
+</ParamField>
+
+### Body Parameters
+
+<ParamField body="refreshToken" type="string">
+  Optional. The refresh token to revoke (128-character hexadecimal string)
+  
+  If not provided, no specific token is revoked (only cookies are cleared)
+</ParamField>
+
+<ParamField body="allDevices" type="boolean">
+  Optional. If `true`, revokes ALL refresh tokens for the user (logout from all devices)
+  
+  Default: `false`
+</ParamField>
+
+### Example Request
+
+#### Logout from Current Device
+
+```bash cURL
+curl -X POST https://api.ceboelha.com/auth/logout \
+  -H "Content-Type: application/json" \
+  -H "Cookie: accessToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
+  -d '{
+    "refreshToken": "a1b2c3d4e5f6789012345678901234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef12345678"
+  }'
+```
+
+#### Logout from All Devices
+
+```bash cURL
+curl -X POST https://api.ceboelha.com/auth/logout \
+  -H "Content-Type: application/json" \
+  -H "Cookie: accessToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
+  -d '{
+    "allDevices": true
+  }'
+```
+
+```javascript JavaScript
+// Logout from current device
+const response = await fetch('https://api.ceboelha.com/auth/logout', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json'
+  },
+  credentials: 'include', // Important: include cookies
+  body: JSON.stringify({
+    refreshToken: 'a1b2c3d4e5f6...'
+  })
+});
+
+const data = await response.json();
+```
+
+```javascript JavaScript
+// Logout from all devices
+const response = await fetch('https://api.ceboelha.com/auth/logout', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json'
+  },
+  credentials: 'include',
+  body: JSON.stringify({
+    allDevices: true
+  })
+});
+
+const data = await response.json();
+```
+
+```python Python
+import requests
+
+# Logout from current device
+response = requests.post(
+    'https://api.ceboelha.com/auth/logout',
+    json={
+        'refreshToken': 'a1b2c3d4e5f6...'
+    },
+    cookies={'accessToken': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'}
+)
+
+data = response.json()
+```
+
+## Response
+
+### Success Response (200)
+
+<ResponseField name="success" type="boolean" required>
+  Always `true` for successful requests
+</ResponseField>
+
+<ResponseField name="message" type="string" required>
+  Success message indicating logout scope:
+  - "Logout realizado com sucesso" (single device)
+  - "Logout realizado em todos os dispositivos" (all devices)
+</ResponseField>
+
+### Response Cookies
+
+The following cookies are automatically cleared:
+
+- `accessToken`: Cleared (set to empty with past expiration)
+- `refreshToken`: Cleared (set to empty with past expiration)
+
+### Example Success Response (Single Device)
+
+```json
+{
+  "success": true,
+  "message": "Logout realizado com sucesso"
+}
+```
+
+### Example Success Response (All Devices)
+
+```json
+{
+  "success": true,
+  "message": "Logout realizado em todos os dispositivos"
+}
+```
+
+## Error Responses
+
+### Unauthorized - Missing Token (401)
+
+```json
+{
+  "success": false,
+  "error": "Unauthorized",
+  "code": "UNAUTHORIZED",
+  "message": "Token de acesso não fornecido"
+}
+```
+
+### Unauthorized - Invalid Token (401)
+
+```json
+{
+  "success": false,
+  "error": "Unauthorized",
+  "code": "UNAUTHORIZED",
+  "message": "Token expirado ou inválido"
+}
+```
+
+### Validation Error (400)
+
+```json
+{
+  "success": false,
+  "error": "Validation failed",
+  "code": "VALIDATION_ERROR",
+  "message": "Token de refresh inválido"
+}
+```
+
+## Logout Behavior
+
+The logout endpoint has three modes of operation:
+
+### 1. Logout with Refresh Token
+
+When you provide a `refreshToken`:
+- The specific refresh token is revoked in the database
+- Auth cookies are cleared from the browser
+- Other devices/sessions remain active
+
+### 2. Logout from All Devices
+
+When you set `allDevices: true`:
+- ALL refresh tokens for the user are revoked
+- The user is logged out from all browsers and devices
+- Auth cookies are cleared from the current browser
+- Useful for security purposes (e.g., password change, suspicious activity)
+
+### 3. Logout without Parameters
+
+When you don't provide any parameters:
+- Auth cookies are cleared from the browser
+- No tokens are revoked in the database
+- This is a "soft" logout (user can still use other sessions)
+
+## Security Features
+
+- **Requires Authentication**: Must have a valid access token
+- **Activity Logging**: Logout events are logged for security auditing
+- **Cookie Cleanup**: Automatically clears HttpOnly cookies
+- **Token Revocation**: Marks tokens as revoked in the database
+- **Multi-Device Support**: Can end all sessions across devices
+
+## Use Cases
+
+### Normal Logout
+User clicks "Logout" button in your app:
+```javascript
+await fetch('/auth/logout', {
+  method: 'POST',
+  credentials: 'include',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ refreshToken: getCurrentRefreshToken() })
+});
+```
+
+### Security Logout (All Devices)
+User changes password or detects suspicious activity:
+```javascript
+await fetch('/auth/logout', {
+  method: 'POST',
+  credentials: 'include',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ allDevices: true })
+});
+```
+
+### Quick Logout (Cookie Clear Only)
+User wants to clear browser session without affecting other devices:
+```javascript
+await fetch('/auth/logout', {
+  method: 'POST',
+  credentials: 'include',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({})
+});
+```
+
+## Notes
+
+- **Authentication Required**: This endpoint requires a valid access token
+- **Cookie Handling**: Cookies are automatically cleared regardless of parameters
+- **Token Format**: Refresh tokens must be 128-character hexadecimal strings
+- **Activity Logging**: Logout events are logged with timestamp and action type
+- **No Rate Limiting**: The basic logout endpoint is not rate-limited (unlike session management)

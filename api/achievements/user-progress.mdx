@@ -1,0 +1,355 @@
+---
+title: 'Achievement Progress'
+description: 'Manage achievement notifications and force progress recalculation'
+---
+
+## Get Unnotified Achievements
+
+Retrieve achievements that were recently unlocked but not yet shown to the user.
+
+### Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -X GET 'https://api.ceboelha.com/insights/achievements/unnotified' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json'
+```
+
+```javascript JavaScript
+const response = await fetch('https://api.ceboelha.com/insights/achievements/unnotified', {
+  method: 'GET',
+  headers: {
+    'Authorization': 'Bearer YOUR_ACCESS_TOKEN',
+    'Content-Type': 'application/json'
+  }
+});
+
+const data = await response.json();
+```
+
+```python Python
+import requests
+
+headers = {
+    'Authorization': 'Bearer YOUR_ACCESS_TOKEN',
+    'Content-Type': 'application/json'
+}
+
+response = requests.get(
+    'https://api.ceboelha.com/insights/achievements/unnotified',
+    headers=headers
+)
+
+data = response.json()
+```
+</CodeGroup>
+
+### Authentication
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token for authentication
+</ParamField>
+
+### Response
+
+<ResponseField name="success" type="boolean" required>
+  Indicates if the request was successful
+</ResponseField>
+
+<ResponseField name="data" type="array" required>
+  Array of achievement objects (same structure as [List Achievements](/api/achievements/list))
+</ResponseField>
+
+### Response Example
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "first_meal",
+      "title": "First Steps",
+      "description": "Log your first meal",
+      "icon": "🎯",
+      "color": "#22c55e",
+      "reward": {
+        "points": 10,
+        "badge": "first_meal_badge"
+      },
+      "unlocked": true,
+      "unlockedAt": "2024-03-01T10:30:00Z"
+    }
+  ]
+}
+```
+
+---
+
+## Mark Achievement as Notified
+
+Mark an achievement notification as seen by the user.
+
+### Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -X POST 'https://api.ceboelha.com/insights/achievements/first_meal/notified' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json'
+```
+
+```javascript JavaScript
+const response = await fetch('https://api.ceboelha.com/insights/achievements/first_meal/notified', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer YOUR_ACCESS_TOKEN',
+    'Content-Type': 'application/json'
+  }
+});
+
+const data = await response.json();
+```
+
+```python Python
+import requests
+
+headers = {
+    'Authorization': 'Bearer YOUR_ACCESS_TOKEN',
+    'Content-Type': 'application/json'
+}
+
+response = requests.post(
+    'https://api.ceboelha.com/insights/achievements/first_meal/notified',
+    headers=headers
+)
+
+data = response.json()
+```
+</CodeGroup>
+
+### Path Parameters
+
+<ParamField path="id" type="string" required>
+  Achievement ID (e.g., "first_meal", "week_streak")
+</ParamField>
+
+### Authentication
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token for authentication
+</ParamField>
+
+### Response
+
+<ResponseField name="success" type="boolean" required>
+  Indicates if the request was successful
+</ResponseField>
+
+<ResponseField name="message" type="string" required>
+  Success message
+</ResponseField>
+
+### Response Example
+
+```json
+{
+  "success": true,
+  "message": "Achievement marked as notified"
+}
+```
+
+---
+
+## Recalculate Achievement Progress
+
+Force a recalculation of all achievement metrics for the authenticated user.
+
+### Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -X POST 'https://api.ceboelha.com/insights/achievements/recalculate' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json'
+```
+
+```javascript JavaScript
+const response = await fetch('https://api.ceboelha.com/insights/achievements/recalculate', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer YOUR_ACCESS_TOKEN',
+    'Content-Type': 'application/json'
+  }
+});
+
+const data = await response.json();
+```
+
+```python Python
+import requests
+
+headers = {
+    'Authorization': 'Bearer YOUR_ACCESS_TOKEN',
+    'Content-Type': 'application/json'
+}
+
+response = requests.post(
+    'https://api.ceboelha.com/insights/achievements/recalculate',
+    headers=headers
+)
+
+data = response.json()
+```
+</CodeGroup>
+
+### Authentication
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token for authentication
+</ParamField>
+
+### Response
+
+<ResponseField name="success" type="boolean" required>
+  Indicates if the request was successful
+</ResponseField>
+
+<ResponseField name="data" type="object" required>
+  Recalculation results
+  
+  <Expandable title="Data Object">
+    <ResponseField name="newlyUnlocked" type="array">
+      Array of achievement IDs that were newly unlocked during recalculation
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="message" type="string" required>
+  Summary message
+</ResponseField>
+
+### Response Example
+
+```json
+{
+  "success": true,
+  "data": {
+    "newlyUnlocked": ["week_streak", "explorer"]
+  },
+  "message": "Recalculated achievements. 2 newly unlocked."
+}
+```
+
+---
+
+## Manually Unlock Achievement
+
+Manually unlock a custom or easter egg achievement.
+
+### Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -X POST 'https://api.ceboelha.com/insights/achievements/easter_egg_1/unlock' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json'
+```
+
+```javascript JavaScript
+const response = await fetch('https://api.ceboelha.com/insights/achievements/easter_egg_1/unlock', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer YOUR_ACCESS_TOKEN',
+    'Content-Type': 'application/json'
+  }
+});
+
+const data = await response.json();
+```
+
+```python Python
+import requests
+
+headers = {
+    'Authorization': 'Bearer YOUR_ACCESS_TOKEN',
+    'Content-Type': 'application/json'
+}
+
+response = requests.post(
+    'https://api.ceboelha.com/insights/achievements/easter_egg_1/unlock',
+    headers=headers
+)
+
+data = response.json()
+```
+</CodeGroup>
+
+### Path Parameters
+
+<ParamField path="id" type="string" required>
+  Achievement ID to unlock
+</ParamField>
+
+### Authentication
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token for authentication
+</ParamField>
+
+### Response
+
+<ResponseField name="success" type="boolean" required>
+  Indicates if the request was successful
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  Unlocked achievement object (if successful)
+</ResponseField>
+
+<ResponseField name="message" type="string" required>
+  Success or error message
+</ResponseField>
+
+### Response Example
+
+**Success:**
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": "easter_egg_1",
+    "title": "Secret Achievement",
+    "description": "You found the hidden secret!",
+    "icon": "🥚",
+    "reward": {
+      "points": 100
+    }
+  },
+  "message": "Achievement unlocked!"
+}
+```
+
+**Error (already unlocked):**
+
+```json
+{
+  "success": false,
+  "error": "Achievement not found or already unlocked"
+}
+```
+
+---
+
+## Notes
+
+- All endpoints require authentication via Bearer token
+- Unnotified achievements should be displayed to users as celebration notifications
+- Use the recalculate endpoint sparingly, as it performs heavy database queries
+- Manual unlock is typically used for easter eggs or special events
+- Achievement progress is automatically updated when users log meals, symptoms, or perform other tracked activities
+
+## Related Endpoints
+
+- [List Achievements](/api/achievements/list) - Get all achievements for the user

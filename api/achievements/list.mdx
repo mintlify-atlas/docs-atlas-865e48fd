@@ -1,0 +1,271 @@
+---
+title: 'List User Achievements'
+description: 'Get all achievements for the authenticated user, grouped by status'
+---
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -X GET 'https://api.ceboelha.com/insights/achievements' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json'
+```
+
+```javascript JavaScript
+const response = await fetch('https://api.ceboelha.com/insights/achievements', {
+  method: 'GET',
+  headers: {
+    'Authorization': 'Bearer YOUR_ACCESS_TOKEN',
+    'Content-Type': 'application/json'
+  }
+});
+
+const data = await response.json();
+```
+
+```python Python
+import requests
+
+headers = {
+    'Authorization': 'Bearer YOUR_ACCESS_TOKEN',
+    'Content-Type': 'application/json'
+}
+
+response = requests.get(
+    'https://api.ceboelha.com/insights/achievements',
+    headers=headers
+)
+
+data = response.json()
+```
+</CodeGroup>
+
+## Authentication
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token for authentication. Get this from the [Login](/api/auth/login) endpoint.
+</ParamField>
+
+## Response
+
+<ResponseField name="success" type="boolean" required>
+  Indicates if the request was successful
+</ResponseField>
+
+<ResponseField name="data" type="object" required>
+  Achievements grouped by status
+  
+  <Expandable title="Data Object">
+    <ResponseField name="unlocked" type="array">
+      Array of unlocked achievements
+    </ResponseField>
+    
+    <ResponseField name="inProgress" type="array">
+      Array of achievements currently in progress
+    </ResponseField>
+    
+    <ResponseField name="locked" type="array">
+      Array of locked achievements (not yet started or hidden)
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+Each achievement object contains:
+
+<Expandable title="Achievement Object">
+  <ResponseField name="id" type="string">
+    Unique achievement identifier (e.g., "first_meal", "week_streak")
+  </ResponseField>
+  
+  <ResponseField name="title" type="string">
+    Achievement title
+  </ResponseField>
+  
+  <ResponseField name="description" type="string">
+    Achievement description
+  </ResponseField>
+  
+  <ResponseField name="icon" type="string">
+    Emoji icon representing the achievement
+  </ResponseField>
+  
+  <ResponseField name="color" type="string">
+    Hex color code for UI display
+  </ResponseField>
+  
+  <ResponseField name="category" type="string">
+    Achievement category: `diary`, `streak`, `exploration`, `social`, or `special`
+  </ResponseField>
+  
+  <ResponseField name="rarity" type="string">
+    Achievement rarity: `common`, `rare`, `epic`, or `legendary`
+  </ResponseField>
+  
+  <ResponseField name="requirement" type="object">
+    Achievement requirement details
+    
+    <Expandable title="Requirement Object">
+      <ResponseField name="type" type="string">
+        Requirement type: `count`, `streak`, `unique`, or `custom`
+      </ResponseField>
+      
+      <ResponseField name="target" type="integer">
+        Target value to complete the achievement
+      </ResponseField>
+      
+      <ResponseField name="metric" type="string">
+        Metric being tracked (e.g., "meals_logged", "days_streak")
+      </ResponseField>
+    </Expandable>
+  </ResponseField>
+  
+  <ResponseField name="reward" type="object">
+    Reward for completing the achievement
+    
+    <Expandable title="Reward Object">
+      <ResponseField name="points" type="integer">
+        XP points awarded
+      </ResponseField>
+      
+      <ResponseField name="badge" type="string">
+        Badge identifier
+      </ResponseField>
+      
+      <ResponseField name="unlocks" type="array">
+        Array of features or achievements unlocked
+      </ResponseField>
+    </Expandable>
+  </ResponseField>
+  
+  <ResponseField name="progress" type="integer">
+    Current progress value
+  </ResponseField>
+  
+  <ResponseField name="unlocked" type="boolean">
+    Whether the achievement is unlocked
+  </ResponseField>
+  
+  <ResponseField name="unlockedAt" type="string">
+    ISO 8601 timestamp when achievement was unlocked (if unlocked)
+  </ResponseField>
+  
+  <ResponseField name="hidden" type="boolean">
+    Whether this is a secret achievement
+  </ResponseField>
+</Expandable>
+
+## Response Example
+
+```json
+{
+  "success": true,
+  "data": {
+    "unlocked": [
+      {
+        "id": "first_meal",
+        "title": "First Steps",
+        "description": "Log your first meal",
+        "icon": "🎯",
+        "color": "#22c55e",
+        "category": "diary",
+        "rarity": "common",
+        "requirement": {
+          "type": "count",
+          "target": 1,
+          "metric": "meals_logged"
+        },
+        "reward": {
+          "points": 10,
+          "badge": "first_meal_badge"
+        },
+        "progress": 1,
+        "unlocked": true,
+        "unlockedAt": "2024-03-01T10:30:00Z",
+        "hidden": false
+      }
+    ],
+    "inProgress": [
+      {
+        "id": "week_streak",
+        "title": "Consistent Logger",
+        "description": "Log meals for 7 days in a row",
+        "icon": "🔥",
+        "color": "#f59e0b",
+        "category": "streak",
+        "rarity": "rare",
+        "requirement": {
+          "type": "streak",
+          "target": 7,
+          "metric": "days_streak"
+        },
+        "reward": {
+          "points": 50,
+          "badge": "week_streak_badge"
+        },
+        "progress": 4,
+        "unlocked": false,
+        "hidden": false
+      }
+    ],
+    "locked": [
+      {
+        "id": "master_logger",
+        "title": "Master Logger",
+        "description": "Log 100 meals",
+        "icon": "👑",
+        "color": "#8b5cf6",
+        "category": "diary",
+        "rarity": "epic",
+        "requirement": {
+          "type": "count",
+          "target": 100,
+          "metric": "meals_logged"
+        },
+        "reward": {
+          "points": 200,
+          "badge": "master_logger_badge"
+        },
+        "progress": 0,
+        "unlocked": false,
+        "hidden": false
+      }
+    ]
+  }
+}
+```
+
+## Achievement Categories
+
+| Category | Description |
+|----------|-------------|
+| `diary` | Related to logging meals and symptoms |
+| `streak` | Related to consecutive day achievements |
+| `exploration` | Related to trying new foods |
+| `social` | Related to community interactions |
+| `special` | Special or seasonal achievements |
+
+## Achievement Metrics
+
+| Metric | Description |
+|--------|-------------|
+| `first_login` | User's first login |
+| `meals_logged` | Total meals logged |
+| `symptoms_logged` | Total symptoms logged |
+| `days_logged` | Total days with entries |
+| `days_streak` | Consecutive days with entries |
+| `foods_tested` | Unique foods tested |
+| `problematic_foods_marked` | Foods marked as problematic |
+| `safe_foods_found` | Foods marked as safe |
+| `custom` | Custom achievement logic |
+
+## Notes
+
+- Requires authentication via Bearer token
+- Progress is automatically tracked based on user activity
+- Hidden achievements won't show details until unlocked
+- Achievement progress is updated in real-time as users interact with the app
+
+## Related Endpoints
+
+- [Get User Progress](/api/achievements/user-progress) - Get unnotified achievements and force recalculation

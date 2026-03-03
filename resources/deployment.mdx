@@ -1,0 +1,315 @@
+---
+title: Deployment
+description: Deploy the Ceboelha API to production using Docker and environment configuration
+---
+
+This guide covers deploying the Ceboelha API in production environments using Docker.
+
+## Prerequisites
+
+Before deploying, ensure you have:
+
+- Docker and Docker Compose installed
+- MongoDB instance (local, Docker, or MongoDB Atlas)
+- Node.js/Bun runtime (if not using Docker)
+- SSL/TLS certificates for HTTPS (recommended for production)
+
+## Environment Configuration
+
+### 1. Create Environment File
+
+Copy the example environment file and configure your production values:
+
+```bash
+cp .env.example .env
+```
+
+### 2. Configure Required Variables
+
+<Warning>
+  Never commit `.env` files to version control. Keep your secrets secure.
+</Warning>
+
+<Steps>
+  <Step title="Server Configuration">
+    ```bash
+    PORT=3333
+    NODE_ENV=production
+    ```
+  </Step>
+
+  <Step title="Database Connection">
+    Choose the appropriate MongoDB connection string:
+
+    **Local with Authentication:**
+    ```bash
+    MONGODB_URI=mongodb://admin:password@localhost:27017/ceboelha?authSource=admin
+    ```
+
+    **MongoDB Atlas:**
+    ```bash
+    MONGODB_URI=mongodb+srv://user:password@cluster.mongodb.net/ceboelha?retryWrites=true&w=majority
+    ```
+  </Step>
+
+  <Step title="Generate JWT Secrets">
+    <Warning>
+      Use strong, random secrets for JWT tokens. Minimum 32 characters required.
+    </Warning>
+
+    Generate secure secrets using one of these methods:
+
+    ```bash
+    # Using OpenSSL
+    openssl rand -hex 32
+
+    # Using Node.js
+    node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+    ```
+
+    Configure in `.env`:
+    ```bash
+    JWT_ACCESS_SECRET=your-generated-access-secret-here
+    JWT_ACCESS_EXPIRES_IN=15m
+
+    JWT_REFRESH_SECRET=your-generated-refresh-secret-here
+    JWT_REFRESH_EXPIRES_IN=7d
+    ```
+  </Step>
+
+  <Step title="CORS Configuration">
+    Set allowed origins (comma-separated for multiple):
+    ```bash
+    CORS_ORIGIN=https://app.ceboelha.com,https://ceboelha.com
+    ```
+  </Step>
+
+  <Step title="Rate Limiting">
+    Configure rate limits based on your traffic:
+    ```bash
+    # General API - 100 requests per minute
+    RATE_LIMIT_MAX=100
+    RATE_LIMIT_WINDOW=60000
+
+    # Auth endpoints - 5 attempts per 15 minutes
+    AUTH_RATE_LIMIT_MAX=5
+    AUTH_RATE_LIMIT_WINDOW=900000
+    ```
+  </Step>
+
+  <Step title="Security Settings">
+    ```bash
+    # Account lockout after failed login attempts
+    MAX_LOGIN_ATTEMPTS=5
+    LOCKOUT_DURATION=900000
+
+    # Password hashing (12 recommended for production)
+    BCRYPT_SALT_ROUNDS=12
+    ```
+  </Step>
+</Steps>
+
+## Docker Deployment
+
+### Dockerfile Overview
+
+The included Dockerfile uses a multi-stage build for optimal security and performance:
+
+- **Build Stage**: Installs dependencies with frozen lockfile
+- **Production Stage**: Uses official Bun runtime with non-root user
+- **Security**: Runs as non-root user (UID 1001) for enhanced security
+
+### Build and Run
+
+<Steps>
+  <Step title="Build the Docker Image">
+    ```bash
+    docker build -t ceboelha-api .
+    ```
+  </Step>
+
+  <Step title="Run the Container">
+    ```bash
+    docker run -d \
+      --name ceboelha-api \
+      -p 3333:3333 \
+      --env-file .env \
+      ceboelha-api
+    ```
+  </Step>
+
+  <Step title="Verify Deployment">
+    Check the API health:
+    ```bash
+    curl http://localhost:3333/health
+    ```
+
+    Expected response:
+    ```json
+    {
+      "success": true,
+      "status": "healthy",
+      "timestamp": "2026-03-03T...",
+      "version": "1.0.0",
+      "environment": "production"
+    }
+    ```
+  </Step>
+</Steps>
+
+## Docker Compose (with MongoDB)
+
+Create a `docker-compose.yml` for running the API with MongoDB:
+
+```yaml
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:7
+    container_name: ceboelha-db
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: secure_password_here
+      MONGO_INITDB_DATABASE: ceboelha
+    volumes:
+      - mongodb_data:/data/db
+    ports:
+      - "27017:27017"
+    networks:
+      - ceboelha-network
+
+  api:
+    build: .
+    container_name: ceboelha-api
+    restart: unless-stopped
+    ports:
+      - "3333:3333"
+    env_file:
+      - .env
+    depends_on:
+      - mongodb
+    networks:
+      - ceboelha-network
+
+volumes:
+  mongodb_data:
+
+networks:
+  ceboelha-network:
+    driver: bridge
+```
+
+Run with:
+```bash
+docker-compose up -d
+```
+
+## Production Considerations
+
+### Security
+
+<Warning>
+  Always use HTTPS in production. Configure a reverse proxy (nginx, Caddy) with SSL/TLS certificates.
+</Warning>
+
+- Enable HSTS headers (automatically enabled when `NODE_ENV=production`)
+- Use strong JWT secrets (minimum 32 characters)
+- Configure appropriate CORS origins
+- Set up firewall rules to restrict access
+- Regularly update dependencies
+
+### Monitoring
+
+- Monitor the `/health` endpoint for uptime
+- Set up logging aggregation (e.g., ELK stack, Datadog)
+- Track rate limit headers in responses
+- Monitor MongoDB performance and connections
+
+### Scaling
+
+<Note>
+  Rate limiting uses in-memory storage. For multi-instance deployments, consider upgrading to Redis-backed rate limiting.
+</Note>
+
+- Use a load balancer for horizontal scaling
+- Consider upgrading rate limiter to Redis for distributed deployments
+- Use MongoDB replica sets for high availability
+- Implement database indexes for performance
+
+### Backup
+
+Regularly backup your MongoDB database:
+
+```bash
+# Backup
+mongodump --uri="mongodb://admin:password@localhost:27017" --out=/backup/$(date +%Y%m%d)
+
+# Restore
+mongorestore --uri="mongodb://admin:password@localhost:27017" /backup/20260303
+```
+
+### Graceful Shutdown
+
+The API handles shutdown signals gracefully:
+
+- Stops accepting new requests
+- Closes database connections
+- Handles SIGTERM and SIGINT signals
+- Logs shutdown process
+
+### Reverse Proxy (nginx)
+
+Example nginx configuration:
+
+```nginx
+server {
+    listen 443 ssl http2;
+    server_name api.ceboelha.com;
+
+    ssl_certificate /path/to/cert.pem;
+    ssl_certificate_key /path/to/key.pem;
+
+    location / {
+        proxy_pass http://localhost:3333;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+    }
+}
+```
+
+## Troubleshooting
+
+### Common Issues
+
+**API won't start:**
+- Check environment variables are set correctly
+- Verify MongoDB connection string
+- Ensure JWT secrets are at least 32 characters
+- Check Docker logs: `docker logs ceboelha-api`
+
+**Database connection errors:**
+- Verify MongoDB is running
+- Check authentication credentials
+- Ensure network connectivity between containers
+- Verify authSource in connection string
+
+**Rate limiting issues:**
+- Check client IP forwarding headers (X-Forwarded-For)
+- Verify rate limit configuration in `.env`
+- Consider upgrading to Redis for distributed setups
+
+## Next Steps
+
+- Review [Security](/resources/security) best practices
+- Set up monitoring and alerting
+- Configure automated backups
+- Implement CI/CD pipeline
+- Review [API Reference](/api/auth/overview) for available endpoints

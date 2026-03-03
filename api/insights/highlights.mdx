@@ -1,0 +1,187 @@
+---
+title: 'Get Daily Highlights'
+description: 'Retrieve personalized daily highlights including achievements, patterns, warnings, and wellness tips'
+---
+
+## Overview
+
+This endpoint returns personalized daily highlights for the authenticated user, including achievements, identified patterns, warnings about problematic foods, and daily wellness tips.
+
+## Endpoint
+
+```
+GET /insights/highlights
+```
+
+## Authentication
+
+This endpoint requires authentication via Bearer token.
+
+```
+Authorization: Bearer <access_token>
+```
+
+## Response
+
+<ResponseField name="success" type="boolean" required>
+  Indicates if the request was successful
+</ResponseField>
+
+<ResponseField name="data" type="array" required>
+  Array of highlight objects, sorted by priority (1 = most important)
+  
+  <Expandable title="Highlight Object">
+    <ResponseField name="id" type="string" required>
+      Unique identifier for the highlight
+    </ResponseField>
+    
+    <ResponseField name="type" type="string" required>
+      Type of highlight. One of:
+      - `achievement` - Milestones and achievements reached
+      - `pattern` - Patterns identified in user data
+      - `warning` - Alerts about problematic foods
+      - `tip` - Daily wellness tips
+    </ResponseField>
+    
+    <ResponseField name="emoji" type="string" required>
+      Emoji icon representing the highlight
+    </ResponseField>
+    
+    <ResponseField name="title" type="string" required>
+      Title of the highlight
+    </ResponseField>
+    
+    <ResponseField name="message" type="string" required>
+      Detailed message explaining the highlight
+    </ResponseField>
+    
+    <ResponseField name="action" type="object">
+      Optional action button for the highlight
+      
+      <Expandable title="Action Object">
+        <ResponseField name="label" type="string" required>
+          Text for the action button
+        </ResponseField>
+        
+        <ResponseField name="href" type="string" required>
+          URL or path for the action
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+    
+    <ResponseField name="priority" type="number" required>
+      Priority level (1 = highest priority, 4 = lowest)
+    </ResponseField>
+    
+    <ResponseField name="createdAt" type="string" required>
+      ISO 8601 date when the highlight was created
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Highlight Types
+
+### Achievement
+Milestones based on app usage:
+- Days using the app (3, 7, 14, 30, 60, 90, 180, 365 days)
+- Current streak (every 7 days)
+
+### Pattern
+Shown when new discoveries are identified in user data. Includes an action to view the discoveries page.
+
+### Warning
+Reminders about recently problematic foods (marked within the last 3 days).
+
+### Tip
+Daily wellness tips covering:
+- Digestion techniques
+- Eating habits
+- Exercise recommendations
+- Stress management
+- Sleep hygiene
+
+## Example Request
+
+```bash
+curl -X GET https://api.ceboelha.com/insights/highlights \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+```
+
+## Example Response
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "507f1f77bcf86cd799439011",
+      "type": "achievement",
+      "emoji": "🎉",
+      "title": "7 dias usando o app!",
+      "message": "legal! o ceboelha tá sempre aqui pra te ajudar 💕",
+      "priority": 1,
+      "createdAt": "2026-03-03"
+    },
+    {
+      "id": "507f1f77bcf86cd799439012",
+      "type": "pattern",
+      "emoji": "🔍",
+      "title": "olha o que achei...",
+      "message": "suas anotações têm uns padrões interessantes! dá uma olhada:",
+      "action": {
+        "label": "ver descobertas",
+        "href": "/dashboard/insights#discoveries"
+      },
+      "priority": 2,
+      "createdAt": "2026-03-03"
+    },
+    {
+      "id": "507f1f77bcf86cd799439013",
+      "type": "warning",
+      "emoji": "👀",
+      "title": "lembrete sobre leite",
+      "message": "você marcou esse alimento algumas vezes. só pra lembrar!",
+      "action": {
+        "label": "ver alimento",
+        "href": "/dashboard/foods/12345"
+      },
+      "priority": 3,
+      "createdAt": "2026-03-03"
+    },
+    {
+      "id": "507f1f77bcf86cd799439014",
+      "type": "tip",
+      "emoji": "💡",
+      "title": "dica do dia",
+      "message": "mastigar devagar ajuda na digestão! tente contar até 20 antes de engolir.",
+      "priority": 4,
+      "createdAt": "2026-03-03"
+    }
+  ]
+}
+```
+
+## Error Responses
+
+### 401 Unauthorized
+
+Returned when the request is missing or has an invalid authentication token.
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "UNAUTHORIZED",
+    "message": "Invalid or missing authentication token"
+  }
+}
+```
+
+## Implementation Notes
+
+- Highlights are generated on-demand based on current user data
+- Achievement highlights are shown based on milestones (specific day counts) or streak multiples of 7
+- Pattern highlights appear when new discoveries are found in the last 7 days
+- Warning highlights show for problematic foods with incidents in the last 3 days
+- Tip highlights are randomly selected from a curated list of wellness advice
+- Highlights are automatically sorted by priority before being returned

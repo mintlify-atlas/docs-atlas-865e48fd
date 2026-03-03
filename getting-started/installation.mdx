@@ -1,0 +1,123 @@
+---
+title: Installation
+description: Get Ceboelha API up and running on your machine
+---
+
+## Prerequisites
+
+Before installing Ceboelha API, ensure you have the following installed on your system:
+
+- **Bun** 1.0 or higher - [Download Bun](https://bun.sh)
+- **MongoDB** 6.0 or higher - [Install MongoDB](https://www.mongodb.com/docs/manual/installation/)
+- **Git** - For cloning the repository
+
+<Note>
+  Ceboelha API is built with Elysia and Bun, providing exceptional performance and developer experience.
+</Note>
+
+## Installation Steps
+
+<Steps>
+  <Step title="Clone the repository">
+    Clone the Ceboelha API repository to your local machine:
+
+    ```bash
+    git clone https://github.com/yourusername/ceboelha-api.git
+    cd ceboelha-api
+    ```
+  </Step>
+
+  <Step title="Install dependencies">
+    Install the required dependencies using Bun:
+
+    ```bash
+    bun install
+    ```
+
+    This will install all dependencies listed in `package.json`, including:
+    - **Elysia** - Fast and ergonomic web framework for Bun
+    - **Mongoose** - MongoDB object modeling
+    - **@elysiajs/jwt** - JWT authentication
+    - **@elysiajs/cors** - CORS support
+    - **@elysiajs/swagger** - API documentation
+    - **bcrypt** - Password hashing
+  </Step>
+
+  <Step title="Set up environment variables">
+    Copy the example environment file and configure it:
+
+    ```bash
+    cp .env.example .env
+    ```
+
+    <Warning>
+      Never commit your `.env` file to version control! It contains sensitive secrets.
+    </Warning>
+
+    See the [Configuration](/getting-started/configuration) page for detailed environment variable setup.
+  </Step>
+
+  <Step title="Set up the database">
+    Ensure MongoDB is running on your system. Then set up the database:
+
+    ```bash
+    # Test MongoDB connection
+    bun run test:db
+
+    # Seed the database with initial data (optional)
+    bun run db:seed
+    ```
+
+    For detailed database setup instructions, see [Database Setup](/getting-started/database-setup).
+  </Step>
+
+  <Step title="Start the development server">
+    Start the API in development mode with hot reload:
+
+    ```bash
+    bun run dev
+    ```
+
+    The server will start at `http://localhost:3333` (or the port specified in your `.env` file).
+  </Step>
+</Steps>
+
+## Verify Installation
+
+Once the server is running, you should see output similar to:
+
+```
+🧅 Ceboelha API starting...
+📍 Environment: development
+✅ MongoDB connected: localhost
+🚀 Server running at http://localhost:3333
+📚 Swagger docs at http://localhost:3333/docs
+```
+
+Visit `http://localhost:3333/docs` in your browser to access the interactive API documentation.
+
+## Available Scripts
+
+The following npm scripts are available:
+
+| Script | Description |
+|--------|-------------|
+| `bun run dev` | Start development server with hot reload |
+| `bun run start` | Start production server |
+| `bun test` | Run tests |
+| `bun run test:db` | Test MongoDB connection |
+| `bun run db:seed` | Seed database with initial data |
+| `bun run db:seed-foods` | Seed FODMAP foods data |
+| `bun run lint` | Lint code with Biome |
+| `bun run format` | Format code with Biome |
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Configuration" icon="gear" href="/getting-started/configuration">
+    Configure environment variables and application settings
+  </Card>
+  <Card title="Database Setup" icon="database" href="/getting-started/database-setup">
+    Set up MongoDB and understand the data models
+  </Card>
+</CardGroup>

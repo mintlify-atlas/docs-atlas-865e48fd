@@ -1,0 +1,107 @@
+---
+title: 'List Categories'
+description: 'Get all available food categories'
+---
+
+## Endpoint
+
+```
+GET /foods/categories
+```
+
+Retrieve all unique food categories (level 1) available in the database. This endpoint is useful for building category filters in your application.
+
+## Query Parameters
+
+This endpoint does not accept any query parameters.
+
+## Response
+
+<ResponseField name="success" type="boolean" required>
+  Indicates if the request was successful
+</ResponseField>
+
+<ResponseField name="data" type="array" required>
+  Array of category names (strings) sorted alphabetically
+  
+  Categories represent the top-level classification of foods such as:
+  - Frutas (Fruits)
+  - Legumes (Vegetables)
+  - Cereais (Grains)
+  - Laticínios (Dairy)
+  - Carnes (Meats)
+  - Peixes (Fish)
+  - And more...
+</ResponseField>
+
+## Examples
+
+### Get all categories
+
+```bash
+curl "https://api.ceboelha.com/foods/categories"
+```
+
+## Response Example
+
+```json
+{
+  "success": true,
+  "data": [
+    "Bebidas",
+    "Carnes",
+    "Cereais",
+    "Condimentos",
+    "Doces e Sobremesas",
+    "Frutas",
+    "Gorduras e Óleos",
+    "Laticínios",
+    "Legumes",
+    "Leguminosas",
+    "Nozes e Sementes",
+    "Ovos",
+    "Peixes e Frutos do Mar",
+    "Produtos Processados"
+  ]
+}
+```
+
+## Usage
+
+This endpoint is commonly used to:
+
+1. **Populate category dropdowns** in search interfaces
+2. **Build filter menus** for food browsing
+3. **Validate category input** before making search requests
+4. **Display category statistics** in dashboards
+
+### Example: Building a category filter
+
+```javascript
+// Fetch categories
+const response = await fetch('https://api.ceboelha.com/foods/categories');
+const { data: categories } = await response.json();
+
+// Use in a filter dropdown
+const categorySelect = document.getElementById('category-filter');
+categories.forEach(category => {
+  const option = document.createElement('option');
+  option.value = category;
+  option.textContent = category;
+  categorySelect.appendChild(option);
+});
+
+// Then search with selected category
+const selectedCategory = categorySelect.value;
+const searchResponse = await fetch(
+  `https://api.ceboelha.com/foods?category=${encodeURIComponent(selectedCategory)}`
+);
+```
+
+## Notes
+
+- Categories are returned in alphabetical order (Portuguese locale)
+- The list includes only categories that have at least one food item
+- Category names are in Portuguese
+- Use the `category` query parameter in the `/foods` endpoint to filter by these categories
+- For more granular filtering, use `category2` and `category3` parameters in the search endpoint

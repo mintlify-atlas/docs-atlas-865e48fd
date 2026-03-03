@@ -1,0 +1,238 @@
+---
+title: Configuration
+description: Configure environment variables and application settings for Ceboelha API
+---
+
+## Environment Variables
+
+Ceboelha API uses environment variables for configuration. All configuration is done through a `.env` file in the project root.
+
+<Steps>
+  <Step title="Create environment file">
+    Copy the example environment file:
+
+    ```bash
+    cp .env.example .env
+    ```
+  </Step>
+
+  <Step title="Configure required variables">
+    Open `.env` and configure the required variables listed below.
+  </Step>
+</Steps>
+
+## Required Variables
+
+<Warning>
+  The following environment variables are **required**. The application will not start without them.
+</Warning>
+
+### Database Connection
+
+```bash
+MONGODB_URI=mongodb://localhost:27017/ceboelha
+```
+
+The MongoDB connection string. See [Database Setup](/getting-started/database-setup) for different configuration options.
+
+### JWT Secrets
+
+```bash
+JWT_ACCESS_SECRET=your-super-secret-access-key-at-least-32-characters-long
+JWT_REFRESH_SECRET=your-super-secret-refresh-key-at-least-32-characters-long
+```
+
+<Warning>
+  JWT secrets must be at least 32 characters long for security. The application will validate this on startup.
+</Warning>
+
+**Generate secure secrets:**
+
+<CodeGroup>
+  ```bash OpenSSL
+  openssl rand -hex 32
+  ```
+
+  ```bash Node.js
+  node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+  ```
+
+  ```bash Bun
+  bun -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+  ```
+</CodeGroup>
+
+## Optional Variables
+
+### Server Configuration
+
+```bash
+PORT=3333
+NODE_ENV=development
+```
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `PORT` | `3333` | Port the server listens on |
+| `NODE_ENV` | `development` | Environment mode: `development`, `production`, or `test` |
+
+### JWT Token Expiration
+
+```bash
+JWT_ACCESS_EXPIRES_IN=15m
+JWT_REFRESH_EXPIRES_IN=7d
+```
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `JWT_ACCESS_EXPIRES_IN` | `15m` | Access token lifetime (short-lived for security) |
+| `JWT_REFRESH_EXPIRES_IN` | `7d` | Refresh token lifetime (long-lived) |
+
+<Note>
+  Access tokens should be short-lived (15 minutes) for security. Refresh tokens can be longer-lived (7 days).
+</Note>
+
+### CORS Configuration
+
+```bash
+CORS_ORIGIN=http://localhost:3000
+```
+
+Comma-separated list of allowed origins for CORS requests.
+
+**Examples:**
+
+```bash
+# Single origin
+CORS_ORIGIN=http://localhost:3000
+
+# Multiple origins
+CORS_ORIGIN=http://localhost:3000,https://app.example.com
+
+# Allow all origins (not recommended for production)
+CORS_ORIGIN=*
+```
+
+### Rate Limiting
+
+#### General API Rate Limiting
+
+```bash
+RATE_LIMIT_MAX=100
+RATE_LIMIT_WINDOW=60000
+```
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `RATE_LIMIT_MAX` | `100` | Maximum requests per window |
+| `RATE_LIMIT_WINDOW` | `60000` | Time window in milliseconds (60000ms = 1 minute) |
+
+Default: **100 requests per minute**
+
+#### Authentication Rate Limiting
+
+```bash
+AUTH_RATE_LIMIT_MAX=5
+AUTH_RATE_LIMIT_WINDOW=900000
+```
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `AUTH_RATE_LIMIT_MAX` | `5` | Maximum auth attempts per window |
+| `AUTH_RATE_LIMIT_WINDOW` | `900000` | Time window in milliseconds (900000ms = 15 minutes) |
+
+Default: **5 attempts per 15 minutes** (stricter to prevent brute force attacks)
+
+### Security Settings
+
+#### Account Lockout
+
+```bash
+MAX_LOGIN_ATTEMPTS=5
+LOCKOUT_DURATION=900000
+```
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `MAX_LOGIN_ATTEMPTS` | `5` | Failed login attempts before lockout |
+| `LOCKOUT_DURATION` | `900000` | Lockout duration in milliseconds (900000ms = 15 minutes) |
+
+After 5 failed login attempts, the account will be locked for 15 minutes.
+
+#### Password Hashing
+
+```bash
+BCRYPT_SALT_ROUNDS=12
+```
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `BCRYPT_SALT_ROUNDS` | `12` | Bcrypt salt rounds for password hashing |
+
+<Note>
+  Higher values are more secure but slower. 12 is recommended for production. For testing, you can use 10 for faster performance.
+</Note>
+
+## Environment Validation
+
+Ceboelha API automatically validates environment variables on startup:
+
+- **Required variables** must be present
+- **JWT secrets** must be at least 32 characters long
+- **Numeric values** are validated and converted to numbers
+
+If validation fails, the application will exit with a clear error message:
+
+```
+❌ Missing required environment variable: MONGODB_URI
+```
+
+or
+
+```
+❌ JWT_ACCESS_SECRET must be at least 32 characters
+```
+
+## Complete Example
+
+Here's a complete `.env` file example:
+
+```bash
+# Server
+PORT=3333
+NODE_ENV=development
+
+# Database
+MONGODB_URI=mongodb://localhost:27017/ceboelha
+
+# JWT
+JWT_ACCESS_SECRET=a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6
+JWT_ACCESS_EXPIRES_IN=15m
+JWT_REFRESH_SECRET=z9y8x7w6v5u4t3s2r1q0p9o8n7m6l5k4j3i2h1g0f9e8d7c6b5a4
+JWT_REFRESH_EXPIRES_IN=7d
+
+# CORS
+CORS_ORIGIN=http://localhost:3000
+
+# Rate Limiting
+RATE_LIMIT_MAX=100
+RATE_LIMIT_WINDOW=60000
+AUTH_RATE_LIMIT_MAX=5
+AUTH_RATE_LIMIT_WINDOW=900000
+
+# Security
+MAX_LOGIN_ATTEMPTS=5
+LOCKOUT_DURATION=900000
+BCRYPT_SALT_ROUNDS=12
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Database Setup" icon="database" href="/getting-started/database-setup">
+    Configure MongoDB and understand database options
+  </Card>
+  <Card title="Authentication" icon="lock" href="/concepts/authentication">
+    Learn how to authenticate API requests
+  </Card>
+</CardGroup>

@@ -1,0 +1,426 @@
+---
+title: Diet Settings
+description: Manage user diet tracking settings and nutritional limits
+---
+
+## Get Diet Settings
+
+### Endpoint
+
+```
+GET /profile/diet-settings
+```
+
+Retrieves the authenticated user's diet tracking settings, including nutritional limits, preset, and display preferences.
+
+### Authentication
+
+This endpoint requires authentication. Include a valid JWT token in the Authorization header.
+
+### Request
+
+#### Headers
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token for authentication
+  
+  Example: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...`
+</ParamField>
+
+### Response
+
+<ResponseField name="success" type="boolean" required>
+  Indicates if the request was successful
+</ResponseField>
+
+<ResponseField name="data" type="object" required>
+  Diet settings object
+  
+  <ResponseField name="enabled" type="boolean" required>
+    Whether diet tracking is enabled
+  </ResponseField>
+  
+  <ResponseField name="preset" type="string" required>
+    Diet preset configuration
+    
+    Allowed values:
+    - `custom` - User-defined limits
+    - `maintenance` - Maintain current weight
+    - `cutting` - Weight loss phase
+    - `bulking` - Muscle gain phase
+    - `lowcarb` - Low carbohydrate diet
+    - `balanced` - Balanced macronutrients
+  </ResponseField>
+  
+  <ResponseField name="limits" type="object" required>
+    Daily nutritional limits
+    
+    <ResponseField name="calories" type="number">
+      Daily calorie limit (kcal)
+    </ResponseField>
+    
+    <ResponseField name="carbs" type="number">
+      Daily carbohydrates limit (grams)
+    </ResponseField>
+    
+    <ResponseField name="protein" type="number">
+      Daily protein limit (grams)
+    </ResponseField>
+    
+    <ResponseField name="fat" type="number">
+      Daily fat limit (grams)
+    </ResponseField>
+    
+    <ResponseField name="sugar" type="number">
+      Daily sugar limit (grams)
+    </ResponseField>
+    
+    <ResponseField name="fiber" type="number">
+      Daily fiber limit (grams)
+    </ResponseField>
+    
+    <ResponseField name="sodium" type="number">
+      Daily sodium limit (mg)
+    </ResponseField>
+  </ResponseField>
+  
+  <ResponseField name="showRemaining" type="boolean" required>
+    Show remaining nutrients instead of consumed
+  </ResponseField>
+  
+  <ResponseField name="showProgressBars" type="boolean" required>
+    Display progress bars in diary
+  </ResponseField>
+  
+  <ResponseField name="warningThreshold" type="number" required>
+    Percentage threshold for warnings (0-100)
+  </ResponseField>
+  
+  <ResponseField name="diaryMode" type="string" required>
+    Diary display mode
+    
+    Allowed values:
+    - `quick` - Simple view with essential information
+    - `detailed` - Comprehensive view with all nutritional data
+  </ResponseField>
+</ResponseField>
+
+### Example
+
+```bash
+curl -X GET https://api.ceboelha.com/profile/diet-settings \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+#### Response
+
+```json
+{
+  "success": true,
+  "data": {
+    "enabled": true,
+    "preset": "balanced",
+    "limits": {
+      "calories": 2000,
+      "carbs": 225,
+      "protein": 75,
+      "fat": 65,
+      "sugar": 40,
+      "fiber": 28,
+      "sodium": 2300
+    },
+    "showRemaining": true,
+    "showProgressBars": true,
+    "warningThreshold": 80,
+    "diaryMode": "quick"
+  }
+}
+```
+
+---
+
+## Update Diet Settings
+
+### Endpoint
+
+```
+PATCH /profile/diet-settings
+```
+
+Updates the authenticated user's diet tracking settings. All fields are optional - only provided fields will be updated.
+
+### Authentication
+
+This endpoint requires authentication. Include a valid JWT token in the Authorization header.
+
+### Request
+
+#### Headers
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token for authentication
+  
+  Example: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...`
+</ParamField>
+
+<ParamField header="Content-Type" type="string" required>
+  Must be `application/json`
+</ParamField>
+
+#### Body Parameters
+
+<ParamField body="enabled" type="boolean">
+  Enable or disable diet tracking
+</ParamField>
+
+<ParamField body="preset" type="string">
+  Diet preset configuration
+  
+  Allowed values:
+  - `custom` - User-defined limits
+  - `maintenance` - Maintain current weight (2000 kcal base)
+  - `cutting` - Weight loss phase (reduced calories)
+  - `bulking` - Muscle gain phase (increased calories and protein)
+  - `lowcarb` - Low carbohydrate diet (high fat, low carbs)
+  - `balanced` - Balanced macronutrients (default)
+</ParamField>
+
+<ParamField body="limits" type="object">
+  Daily nutritional limits (all values optional)
+  
+  <ParamField body="calories" type="number">
+    Daily calorie limit (must be >= 0)
+  </ParamField>
+  
+  <ParamField body="carbs" type="number">
+    Daily carbohydrates limit in grams (must be >= 0)
+  </ParamField>
+  
+  <ParamField body="protein" type="number">
+    Daily protein limit in grams (must be >= 0)
+  </ParamField>
+  
+  <ParamField body="fat" type="number">
+    Daily fat limit in grams (must be >= 0)
+  </ParamField>
+  
+  <ParamField body="sugar" type="number">
+    Daily sugar limit in grams (must be >= 0)
+  </ParamField>
+  
+  <ParamField body="fiber" type="number">
+    Daily fiber limit in grams (must be >= 0)
+  </ParamField>
+  
+  <ParamField body="sodium" type="number">
+    Daily sodium limit in mg (must be >= 0)
+  </ParamField>
+</ParamField>
+
+<ParamField body="showRemaining" type="boolean">
+  Show remaining nutrients instead of consumed
+  
+  - `true` - Display remaining values (e.g., "500 kcal left")
+  - `false` - Display consumed values (e.g., "1500 kcal eaten")
+</ParamField>
+
+<ParamField body="showProgressBars" type="boolean">
+  Display progress bars in diary view
+</ParamField>
+
+<ParamField body="warningThreshold" type="number">
+  Percentage threshold for warnings
+  
+  - Range: 0-100
+  - When consumption reaches this percentage, a warning is displayed
+  - Example: 80 means warn when 80% of daily limit is reached
+</ParamField>
+
+<ParamField body="diaryMode" type="string">
+  Diary display mode
+  
+  Allowed values:
+  - `quick` - Simple view with essential information
+  - `detailed` - Comprehensive view with all nutritional data
+</ParamField>
+
+### Response
+
+<ResponseField name="success" type="boolean" required>
+  Indicates if the request was successful
+</ResponseField>
+
+<ResponseField name="data" type="object" required>
+  Updated diet settings object (same structure as GET response)
+</ResponseField>
+
+<ResponseField name="message" type="string" required>
+  Success message: "Configurações de dieta atualizadas!"
+</ResponseField>
+
+### Examples
+
+#### Enable Diet Tracking with Balanced Preset
+
+```bash
+curl -X PATCH https://api.ceboelha.com/profile/diet-settings \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "enabled": true,
+    "preset": "balanced"
+  }'
+```
+
+#### Update Custom Limits
+
+```bash
+curl -X PATCH https://api.ceboelha.com/profile/diet-settings \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "preset": "custom",
+    "limits": {
+      "calories": 1800,
+      "carbs": 200,
+      "protein": 100,
+      "fat": 60
+    }
+  }'
+```
+
+#### Change Display Preferences
+
+```bash
+curl -X PATCH https://api.ceboelha.com/profile/diet-settings \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "showRemaining": false,
+    "showProgressBars": true,
+    "diaryMode": "detailed",
+    "warningThreshold": 90
+  }'
+```
+
+#### Set Low-Carb Preset
+
+```bash
+curl -X PATCH https://api.ceboelha.com/profile/diet-settings \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "preset": "lowcarb",
+    "enabled": true
+  }'
+```
+
+#### Response
+
+```json
+{
+  "success": true,
+  "data": {
+    "enabled": true,
+    "preset": "custom",
+    "limits": {
+      "calories": 1800,
+      "carbs": 200,
+      "protein": 100,
+      "fat": 60,
+      "sugar": 40,
+      "fiber": 28,
+      "sodium": 2300
+    },
+    "showRemaining": false,
+    "showProgressBars": true,
+    "warningThreshold": 90,
+    "diaryMode": "detailed"
+  },
+  "message": "Configurações de dieta atualizadas!"
+}
+```
+
+## Error Responses
+
+### 400 Bad Request - Invalid Values
+
+```json
+{
+  "success": false,
+  "error": "Validation failed",
+  "details": {
+    "limits.calories": "Must be greater than or equal to 0",
+    "warningThreshold": "Must be between 0 and 100"
+  }
+}
+```
+
+### 401 Unauthorized
+
+```json
+{
+  "success": false,
+  "error": "Token inválido ou expirado"
+}
+```
+
+### 404 Not Found
+
+```json
+{
+  "success": false,
+  "error": "Usuário não encontrado"
+}
+```
+
+## Diet Presets
+
+The following presets provide common diet configurations:
+
+### Balanced (Default)
+- **Calories**: 2000 kcal
+- **Carbs**: 225g (45%)
+- **Protein**: 75g (15%)
+- **Fat**: 65g (30%)
+- **Use case**: General healthy eating
+
+### Maintenance
+- **Calories**: 2000 kcal
+- **Carbs**: 225g (45%)
+- **Protein**: 75g (15%)
+- **Fat**: 65g (30%)
+- **Use case**: Maintain current weight
+
+### Cutting
+- **Calories**: Reduced from maintenance
+- **Protein**: Higher to preserve muscle
+- **Carbs**: Moderate
+- **Fat**: Lower
+- **Use case**: Fat loss while preserving muscle
+
+### Bulking
+- **Calories**: Increased from maintenance
+- **Protein**: High for muscle growth
+- **Carbs**: High for energy
+- **Fat**: Moderate
+- **Use case**: Muscle gain and strength
+
+### Low Carb
+- **Calories**: 2000 kcal
+- **Carbs**: Very low (5-10%)
+- **Protein**: Moderate (25-30%)
+- **Fat**: High (60-70%)
+- **Use case**: Ketogenic or low-carb diets
+
+### Custom
+- **All limits**: User-defined
+- **Use case**: Personalized nutrition requirements
+
+## Notes
+
+- All fields are optional when updating - send only what you want to change
+- Limits are merged with existing limits, not replaced entirely
+- Setting a preset will update the default limits, but you can customize them after
+- The `warningThreshold` helps users stay within their limits by showing alerts
+- Diet settings changes are logged in the activity log

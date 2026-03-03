@@ -1,0 +1,171 @@
+---
+title: 'Get Weekly Summary'
+description: 'Retrieve weekly statistics and comparison with the previous week'
+---
+
+## Overview
+
+This endpoint returns comprehensive statistics for the last 7 days, including diary entries, symptoms, meals, and comparisons with the previous week.
+
+## Endpoint
+
+```
+GET /insights/weekly-summary
+```
+
+## Authentication
+
+This endpoint requires authentication via Bearer token.
+
+```
+Authorization: Bearer <access_token>
+```
+
+## Response
+
+<ResponseField name="success" type="boolean" required>
+  Indicates if the request was successful
+</ResponseField>
+
+<ResponseField name="data" type="object" required>
+  Weekly summary statistics
+  
+  <Expandable title="Weekly Summary Object">
+    <ResponseField name="daysLogged" type="number" required>
+      Number of unique days with diary entries in the last 7 days
+    </ResponseField>
+    
+    <ResponseField name="totalSymptoms" type="number" required>
+      Total number of symptom entries recorded
+    </ResponseField>
+    
+    <ResponseField name="avgIntensity" type="number" required>
+      Average symptom intensity (0-10 scale, rounded to 1 decimal place)
+    </ResponseField>
+    
+    <ResponseField name="totalMeals" type="number" required>
+      Total number of meal entries recorded
+    </ResponseField>
+    
+    <ResponseField name="uniqueFoods" type="number" required>
+      Number of unique foods consumed across all meals
+    </ResponseField>
+    
+    <ResponseField name="comparisonLastWeek" type="object" required>
+      Percentage changes compared to the previous week
+      
+      <Expandable title="Comparison Object">
+        <ResponseField name="symptoms" type="number" required>
+          Percentage change in total symptoms (negative = improvement)
+        </ResponseField>
+        
+        <ResponseField name="intensity" type="number" required>
+          Percentage change in average intensity (negative = improvement)
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+    
+    <ResponseField name="streak" type="number" required>
+      Current streak of consecutive days with entries
+    </ResponseField>
+    
+    <ResponseField name="periodStart" type="string" required>
+      Start date of the week period (YYYY-MM-DD format)
+    </ResponseField>
+    
+    <ResponseField name="periodEnd" type="string" required>
+      End date of the week period (YYYY-MM-DD format)
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Statistics Explained
+
+### Days Logged
+Counts unique calendar dates with at least one diary entry (meal or symptom) in the last 7 days.
+
+### Total Symptoms
+Sum of all symptom entries, regardless of type or intensity.
+
+### Average Intensity
+Mean intensity value across all symptom entries, on a scale of 0-10. Rounded to one decimal place for readability.
+
+### Unique Foods
+Counts distinct foods consumed across all meals. The same food eaten multiple times is counted once.
+
+### Weekly Comparison
+Percentage changes are calculated as:
+```
+((current - previous) / previous) * 100
+```
+
+- Positive values indicate an increase
+- Negative values indicate a decrease (improvement for symptoms/intensity)
+- If previous week had zero values, returns 100 if current has any values, 0 otherwise
+
+### Streak
+Number of consecutive days with at least one diary entry. Resets to 0 if a day is missed.
+
+## Example Request
+
+```bash
+curl -X GET https://api.ceboelha.com/insights/weekly-summary \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+```
+
+## Example Response
+
+```json
+{
+  "success": true,
+  "data": {
+    "daysLogged": 6,
+    "totalSymptoms": 8,
+    "avgIntensity": 4.2,
+    "totalMeals": 18,
+    "uniqueFoods": 42,
+    "comparisonLastWeek": {
+      "symptoms": -25,
+      "intensity": -15
+    },
+    "streak": 6,
+    "periodStart": "2026-02-24",
+    "periodEnd": "2026-03-03"
+  }
+}
+```
+
+## Interpreting Results
+
+In the example above:
+- User logged data on 6 out of 7 days
+- Recorded 8 symptom entries with an average intensity of 4.2/10
+- Logged 18 meals containing 42 different foods
+- Symptoms decreased by 25% compared to previous week (improvement)
+- Average intensity decreased by 15% (improvement)
+- User has a 6-day streak of consecutive logging
+
+## Error Responses
+
+### 401 Unauthorized
+
+Returned when the request is missing or has an invalid authentication token.
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "UNAUTHORIZED",
+    "message": "Invalid or missing authentication token"
+  }
+}
+```
+
+## Implementation Notes
+
+- All date ranges use UTC timezone with proper day boundaries (00:00:00 to 23:59:59)
+- Current week is defined as the last 7 complete days from today
+- Previous week is the 7 days immediately before the current week
+- Percentage comparisons handle edge cases (division by zero) gracefully
+- Streak data is retrieved from user statistics, updated on each diary entry
+- Average intensity is rounded to 1 decimal place for better UX

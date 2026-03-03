@@ -1,0 +1,248 @@
+---
+title: Update Diary Entry
+description: Update an existing meal or symptom entry in the diary
+---
+
+## Endpoint
+
+```
+PATCH /diary/:id
+```
+
+## Authentication
+
+This endpoint requires authentication via Bearer token.
+
+```bash
+Authorization: Bearer <token>
+```
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  Entry ID (MongoDB ObjectId - 24 hexadecimal characters)
+</ParamField>
+
+## Request Body
+
+You can update either meal or symptom data. All fields are optional - only provide the fields you want to update.
+
+<ParamField body="meal" type="object">
+  Meal data to update (for meal entries only)
+  
+  <ParamField body="type" type="string">
+    Type of meal: `breakfast`, `lunch`, `dinner`, or `snack`
+  </ParamField>
+  
+  <ParamField body="time" type="string">
+    Time of the meal in HH:MM format
+  </ParamField>
+  
+  <ParamField body="foods" type="array">
+    Complete array of foods (replaces existing foods, minimum 1 required)
+  </ParamField>
+  
+  <ParamField body="notes" type="string">
+    Additional notes about the meal (max 500 characters)
+  </ParamField>
+</ParamField>
+
+<ParamField body="symptom" type="object">
+  Symptom data to update (for symptom entries only)
+  
+  <ParamField body="type" type="string">
+    Type of symptom
+  </ParamField>
+  
+  <ParamField body="intensity" type="number">
+    Intensity level from 1 to 5
+  </ParamField>
+  
+  <ParamField body="time" type="string">
+    Time in HH:MM format
+  </ParamField>
+  
+  <ParamField body="duration" type="number">
+    Duration in minutes
+  </ParamField>
+  
+  <ParamField body="notes" type="string">
+    Additional notes (max 500 characters)
+  </ParamField>
+</ParamField>
+
+## Response
+
+<ResponseField name="success" type="boolean">
+  Indicates if the update was successful
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  The updated diary entry with all fields
+</ResponseField>
+
+## Examples
+
+### Update meal time and notes
+
+```bash
+curl -X PATCH "https://api.ceboelha.com/diary/65f1a2b3c4d5e6f7a8b9c0d1" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "meal": {
+      "time": "09:00",
+      "notes": "Ajustado o horário correto da refeição"
+    }
+  }'
+```
+
+### Update entire meal foods list
+
+```bash
+curl -X PATCH "https://api.ceboelha.com/diary/65f1a2b3c4d5e6f7a8b9c0d1" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "meal": {
+      "foods": [
+        {
+          "foodId": 1234,
+          "foodName": "Aveia",
+          "portion": "1 xícara",
+          "quantity_g": 80
+        },
+        {
+          "foodId": 5678,
+          "foodName": "Banana",
+          "portion": "1 média",
+          "quantity_g": 120,
+          "markedAsBad": true
+        },
+        {
+          "foodId": 9012,
+          "foodName": "Mel",
+          "portion": "1 colher de sopa",
+          "quantity_g": 20
+        }
+      ]
+    }
+  }'
+```
+
+### Update symptom intensity and add duration
+
+```bash
+curl -X PATCH "https://api.ceboelha.com/diary/65f1a2b3c4d5e6f7a8b9c0d2" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "symptom": {
+      "intensity": 4,
+      "duration": 60,
+      "notes": "O sintoma piorou e durou mais tempo que o esperado"
+    }
+  }'
+```
+
+### Change symptom type
+
+```bash
+curl -X PATCH "https://api.ceboelha.com/diary/65f1a2b3c4d5e6f7a8b9c0d2" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "symptom": {
+      "type": "cramps",
+      "notes": "Percebi que era mais cólica do que inchaço"
+    }
+  }'
+```
+
+### Update meal type from snack to breakfast
+
+```bash
+curl -X PATCH "https://api.ceboelha.com/diary/65f1a2b3c4d5e6f7a8b9c0d1" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "meal": {
+      "type": "breakfast"
+    }
+  }'
+```
+
+<ResponseExample>
+```json
+{
+  "success": true,
+  "data": {
+    "_id": "65f1a2b3c4d5e6f7a8b9c0d1",
+    "userId": "65e1a2b3c4d5e6f7a8b9c0d1",
+    "date": "2024-03-15",
+    "type": "meal",
+    "meal": {
+      "type": "breakfast",
+      "time": "09:00",
+      "foods": [
+        {
+          "foodId": 1234,
+          "foodName": "Aveia",
+          "portion": "1 xícara",
+          "quantity_g": 80,
+          "calculatedNutrition": {
+            "calories": 303,
+            "carbs": 54.8,
+            "protein": 10.7,
+            "fat": 5.3,
+            "sugar": 0.8,
+            "fiber": 8.2,
+            "sodium": 2
+          }
+        }
+      ],
+      "notes": "Ajustado o horário correto da refeição"
+    },
+    "createdAt": "2024-03-15T08:35:22.000Z",
+    "updatedAt": "2024-03-15T09:05:15.000Z"
+  }
+}
+```
+</ResponseExample>
+
+## Error Responses
+
+### Entry not found
+
+```json
+{
+  "success": false,
+  "error": "Entry not found"
+}
+```
+
+### Unauthorized (not the entry owner)
+
+```json
+{
+  "success": false,
+  "error": "Forbidden"
+}
+```
+
+### Invalid entry ID format
+
+```json
+{
+  "success": false,
+  "error": "Invalid entry ID format"
+}
+```
+
+## Notes
+
+- You can only update entries that belong to your user account
+- When updating the `foods` array in a meal, you must provide the complete array (it replaces the existing foods)
+- All other fields are merged with existing data
+- The entry's `date` and `type` cannot be changed - create a new entry if you need to change these
+- The `updatedAt` timestamp is automatically updated

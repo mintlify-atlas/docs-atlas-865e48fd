@@ -1,0 +1,365 @@
+---
+title: 'Search Foods'
+description: 'Search and filter foods with pagination support'
+---
+
+## Endpoint
+
+```
+GET /foods
+```
+
+Search foods in the database with support for text search, FODMAP filtering, category filtering, and pagination.
+
+## Query Parameters
+
+<ParamField query="search" type="string">
+  Text search query to match food names (case-insensitive, partial matching supported)
+  
+  **Constraints:** 1-100 characters
+  
+  **Example:** `search=alho` matches "Alho", "Alho-poró", etc.
+</ParamField>
+
+<ParamField query="level" type="string">
+  Filter by FODMAP level
+  
+  **Allowed values:** `free`, `low`, `medium`, `high`, `all`
+  
+  **Example:** `level=low` returns only low-FODMAP foods
+</ParamField>
+
+<ParamField query="category" type="string">
+  Filter by category level 1 (main category)
+  
+  **Constraints:** 1-100 characters
+  
+  **Example:** `category=Frutas`
+</ParamField>
+
+<ParamField query="category2" type="string">
+  Filter by category level 2 (subcategory)
+  
+  **Constraints:** 1-200 characters
+  
+  **Example:** `category2=Frutas Frescas`
+</ParamField>
+
+<ParamField query="category3" type="string">
+  Filter by category level 3 (sub-subcategory)
+  
+  **Constraints:** 1-200 characters
+  
+  **Example:** `category3=Frutas Tropicais`
+</ParamField>
+
+<ParamField query="hasFodmap" type="string">
+  Filter by whether food has FODMAP information
+  
+  **Allowed values:** `true`, `false`
+  
+  **Example:** `hasFodmap=true` returns only foods with FODMAP data
+</ParamField>
+
+<ParamField query="hasNutrition" type="string">
+  Filter by whether food has nutritional information
+  
+  **Allowed values:** `true`, `false`
+  
+  **Example:** `hasNutrition=true` returns only foods with nutrition data
+</ParamField>
+
+<ParamField query="source" type="string">
+  Filter by data source
+  
+  **Constraints:** 1-50 characters
+  
+  **Allowed values:** `nutritional_table`, `user_contributed`, `ai_generated`
+</ParamField>
+
+<ParamField query="sortBy" type="string" default="name">
+  Field to sort results by
+  
+  **Allowed values:** `name`, `energy`, `protein`, `carbs`, `fat`
+</ParamField>
+
+<ParamField query="sortOrder" type="string" default="asc">
+  Sort direction
+  
+  **Allowed values:** `asc`, `desc`
+</ParamField>
+
+<ParamField query="page" type="integer" default="1">
+  Page number for pagination
+  
+  **Constraints:** Must be >= 1
+</ParamField>
+
+<ParamField query="limit" type="integer" default="50">
+  Number of results per page
+  
+  **Constraints:** 1-100
+  
+  **Default:** 50
+</ParamField>
+
+## Response
+
+<ResponseField name="success" type="boolean" required>
+  Indicates if the request was successful
+</ResponseField>
+
+<ResponseField name="data" type="array" required>
+  Array of food objects matching the search criteria
+  
+  <ResponseField name="id" type="integer" required>
+    Unique numeric food identifier
+  </ResponseField>
+  
+  <ResponseField name="name" type="string" required>
+    Food name
+  </ResponseField>
+  
+  <ResponseField name="source" type="string" required>
+    Data source: `nutritional_table`, `user_contributed`, or `ai_generated`
+  </ResponseField>
+  
+  <ResponseField name="category_level_1" type="string" required>
+    Main category (e.g., "Frutas", "Legumes")
+  </ResponseField>
+  
+  <ResponseField name="category_level_2" type="string">
+    Subcategory (level 2)
+  </ResponseField>
+  
+  <ResponseField name="category_level_3" type="string">
+    Sub-subcategory (level 3)
+  </ResponseField>
+  
+  <ResponseField name="image" type="string">
+    URL to food image (if available)
+  </ResponseField>
+  
+  <ResponseField name="fodmap" type="object">
+    FODMAP information (if available)
+    
+    <ResponseField name="level" type="string" required>
+      FODMAP level: `free`, `low`, `medium`, or `high`
+    </ResponseField>
+    
+    <ResponseField name="portion_note" type="string">
+      Portion-specific notes (e.g., "1/2 cup")
+    </ResponseField>
+    
+    <ResponseField name="additional_notes" type="string">
+      Additional FODMAP notes
+    </ResponseField>
+    
+    <ResponseField name="search_information" type="object" required>
+      Details about how FODMAP data was matched
+      
+      <ResponseField name="match_type" type="string" required>
+        `single_ingredient` or `multiple_ingredients`
+      </ResponseField>
+      
+      <ResponseField name="category" type="string">
+        FODMAP category (for single ingredient match)
+      </ResponseField>
+      
+      <ResponseField name="name_english" type="string">
+        English name (for single ingredient match)
+      </ResponseField>
+      
+      <ResponseField name="detected_keyword" type="string">
+        Keyword that triggered the match
+      </ResponseField>
+    </ResponseField>
+  </ResponseField>
+  
+  <ResponseField name="nutrition" type="object">
+    Nutritional information (if available)
+    
+    <ResponseField name="energy_kcal" type="number" required>
+      Energy in kilocalories
+    </ResponseField>
+    
+    <ResponseField name="energy_kj" type="number" required>
+      Energy in kilojoules
+    </ResponseField>
+    
+    <ResponseField name="reference_portion" type="string" required>
+      Reference portion (typically "100g")
+    </ResponseField>
+    
+    <ResponseField name="macronutrients" type="object" required>
+      Macronutrient values
+      
+      <ResponseField name="protein_g" type="string" required>
+        Protein in grams
+      </ResponseField>
+      
+      <ResponseField name="carbohydrates_g" type="string" required>
+        Carbohydrates in grams
+      </ResponseField>
+      
+      <ResponseField name="lipids_g" type="string" required>
+        Fats (lipids) in grams
+      </ResponseField>
+      
+      <ResponseField name="fiber_g" type="string" required>
+        Fiber in grams
+      </ResponseField>
+      
+      <ResponseField name="sugars_g" type="string" required>
+        Sugars in grams
+      </ResponseField>
+      
+      <ResponseField name="salt_g" type="string">
+        Salt in grams
+      </ResponseField>
+      
+      <ResponseField name="saturated_fatty_acids_g" type="string">
+        Saturated fatty acids in grams
+      </ResponseField>
+      
+      <ResponseField name="cholesterol_mg" type="string">
+        Cholesterol in milligrams
+      </ResponseField>
+    </ResponseField>
+    
+    <ResponseField name="vitamins" type="object">
+      Vitamin content (key-value pairs)
+    </ResponseField>
+    
+    <ResponseField name="minerals" type="object">
+      Mineral content (key-value pairs)
+    </ResponseField>
+  </ResponseField>
+  
+  <ResponseField name="searchCount" type="integer" required>
+    Number of times this food has been searched
+  </ResponseField>
+  
+  <ResponseField name="createdAt" type="string" required>
+    ISO 8601 timestamp when the food was created
+  </ResponseField>
+  
+  <ResponseField name="updatedAt" type="string" required>
+    ISO 8601 timestamp when the food was last updated
+  </ResponseField>
+</ResponseField>
+
+<ResponseField name="pagination" type="object" required>
+  Pagination metadata
+  
+  <ResponseField name="page" type="integer" required>
+    Current page number
+  </ResponseField>
+  
+  <ResponseField name="limit" type="integer" required>
+    Items per page
+  </ResponseField>
+  
+  <ResponseField name="total" type="integer" required>
+    Total number of items matching the query
+  </ResponseField>
+  
+  <ResponseField name="totalPages" type="integer" required>
+    Total number of pages
+  </ResponseField>
+</ResponseField>
+
+## Examples
+
+### Search for low-FODMAP fruits
+
+```bash
+curl "https://api.ceboelha.com/foods?category=Frutas&level=low&page=1&limit=20"
+```
+
+### Search by name with nutrition filter
+
+```bash
+curl "https://api.ceboelha.com/foods?search=banana&hasNutrition=true"
+```
+
+### Get foods sorted by protein content
+
+```bash
+curl "https://api.ceboelha.com/foods?sortBy=protein&sortOrder=desc&limit=10"
+```
+
+### Advanced filtering
+
+```bash
+curl "https://api.ceboelha.com/foods?level=low&hasFodmap=true&hasNutrition=true&sortBy=energy&sortOrder=asc&page=1&limit=50"
+```
+
+## Response Example
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "_id": "507f1f77bcf86cd799439011",
+      "id": 1234,
+      "name": "Banana",
+      "source": "nutritional_table",
+      "category_level_1": "Frutas",
+      "category_level_2": "Frutas Frescas",
+      "category_level_3": "Frutas Tropicais",
+      "image": null,
+      "fodmap": {
+        "level": "low",
+        "portion_note": "1 unidade média (100g)",
+        "additional_notes": null,
+        "search_information": {
+          "match_type": "single_ingredient",
+          "category": "Fruits",
+          "name_english": "Banana",
+          "detected_keyword": "banana"
+        }
+      },
+      "nutrition": {
+        "energy_kcal": 89,
+        "energy_kj": 372,
+        "reference_portion": "100g",
+        "macronutrients": {
+          "protein_g": "1.1",
+          "carbohydrates_g": "22.8",
+          "lipids_g": "0.3",
+          "fiber_g": "2.6",
+          "sugars_g": "12.2",
+          "salt_g": "0.01",
+          "saturated_fatty_acids_g": "0.1",
+          "cholesterol_mg": "0"
+        },
+        "vitamins": {},
+        "minerals": {}
+      },
+      "data_sources": {
+        "nutritional_data": "Portuguese Nutrition Table",
+        "fodmap_data": "Monash University FODMAP Database"
+      },
+      "searchCount": 142,
+      "createdAt": "2024-01-15T10:30:00.000Z",
+      "updatedAt": "2024-03-01T14:22:00.000Z"
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 20,
+    "total": 245,
+    "totalPages": 13
+  }
+}
+```
+
+## Notes
+
+- The search parameter uses case-insensitive partial matching (e.g., "alh" matches "alho", "alface")
+- Multiple filters can be combined for precise queries
+- Pagination limit is capped at 100 items per page
+- Foods without FODMAP or nutrition data will have those fields as `null`
+- Search count is incremented when foods are retrieved by ID (analytics)

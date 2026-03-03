@@ -1,0 +1,206 @@
+---
+title: 'Get Filter Options'
+description: 'Get all available filter options for food search'
+---
+
+## Endpoint
+
+```
+GET /foods/filters
+```
+
+Retrieve all available filter options including categories (all levels), data sources, and FODMAP levels. This endpoint provides everything needed to build comprehensive search filters.
+
+## Query Parameters
+
+This endpoint does not accept any query parameters.
+
+## Response
+
+<ResponseField name="success" type="boolean" required>
+  Indicates if the request was successful
+</ResponseField>
+
+<ResponseField name="data" type="object" required>
+  Object containing all filter options
+  
+  <ResponseField name="categories" type="object" required>
+    Categories organized by hierarchy level
+    
+    <ResponseField name="level1" type="array" required>
+      Array of main category names (sorted alphabetically)
+      
+      Examples: "Frutas", "Legumes", "Cereais", "Laticínios"
+    </ResponseField>
+    
+    <ResponseField name="level2" type="array" required>
+      Array of subcategory names (level 2, sorted alphabetically)
+      
+      Examples: "Frutas Frescas", "Frutas Secas", "Legumes Verdes"
+    </ResponseField>
+    
+    <ResponseField name="level3" type="array" required>
+      Array of sub-subcategory names (level 3, sorted alphabetically)
+      
+      Examples: "Frutas Tropicais", "Frutas Cítricas"
+    </ResponseField>
+  </ResponseField>
+  
+  <ResponseField name="sources" type="array" required>
+    Array of available data sources (sorted alphabetically)
+    
+    Possible values:
+    - `nutritional_table` - Official nutritional data tables
+    - `user_contributed` - User-submitted data
+    - `ai_generated` - AI-generated nutritional estimates
+  </ResponseField>
+  
+  <ResponseField name="fodmapLevels" type="array" required>
+    Array of FODMAP level values
+    
+    Always returns: `["free", "low", "medium", "high"]`
+    
+    - `free` - FODMAP-free foods
+    - `low` - Low FODMAP (safe in recommended portions)
+    - `medium` - Moderate FODMAP (use with caution)
+    - `high` - High FODMAP (avoid during elimination phase)
+  </ResponseField>
+</ResponseField>
+
+## Examples
+
+### Get all filter options
+
+```bash
+curl "https://api.ceboelha.com/foods/filters"
+```
+
+## Response Example
+
+```json
+{
+  "success": true,
+  "data": {
+    "categories": {
+      "level1": [
+        "Bebidas",
+        "Carnes",
+        "Cereais",
+        "Condimentos",
+        "Doces e Sobremesas",
+        "Frutas",
+        "Gorduras e Óleos",
+        "Laticínios",
+        "Legumes",
+        "Leguminosas",
+        "Nozes e Sementes",
+        "Ovos",
+        "Peixes e Frutos do Mar",
+        "Produtos Processados"
+      ],
+      "level2": [
+        "Bebidas Alcoólicas",
+        "Bebidas Não Alcoólicas",
+        "Carnes Brancas",
+        "Carnes Vermelhas",
+        "Cereais Integrais",
+        "Cereais Refinados",
+        "Frutas Frescas",
+        "Frutas Secas",
+        "Legumes Folhosos",
+        "Legumes Verdes",
+        "Queijos",
+        "Iogurtes"
+      ],
+      "level3": [
+        "Frutas Cítricas",
+        "Frutas Tropicais",
+        "Frutas Vermelhas",
+        "Legumes de Raiz",
+        "Vegetais Crucíferos"
+      ]
+    },
+    "sources": [
+      "ai_generated",
+      "nutritional_table",
+      "user_contributed"
+    ],
+    "fodmapLevels": [
+      "free",
+      "low",
+      "medium",
+      "high"
+    ]
+  }
+}
+```
+
+## Usage
+
+This endpoint is ideal for:
+
+1. **Initializing search filters** - Build complete filter UIs with all available options
+2. **Cascading dropdowns** - Create hierarchical category selectors (Level 1 → Level 2 → Level 3)
+3. **Filter validation** - Ensure user-provided filters are valid
+4. **Auto-complete** - Populate suggestions for category search
+
+### Example: Building cascading category filters
+
+```javascript
+// Fetch all filter options
+const response = await fetch('https://api.ceboelha.com/foods/filters');
+const { data: filters } = await response.json();
+
+// Build level 1 dropdown
+const level1Select = document.getElementById('category-level-1');
+filters.categories.level1.forEach(category => {
+  const option = document.createElement('option');
+  option.value = category;
+  option.textContent = category;
+  level1Select.appendChild(option);
+});
+
+// Build FODMAP level filter
+const fodmapSelect = document.getElementById('fodmap-level');
+filters.fodmapLevels.forEach(level => {
+  const option = document.createElement('option');
+  option.value = level;
+  option.textContent = level.toUpperCase();
+  fodmapSelect.appendChild(option);
+});
+
+// Build source filter
+const sourceSelect = document.getElementById('source-filter');
+filters.sources.forEach(source => {
+  const option = document.createElement('option');
+  option.value = source;
+  option.textContent = source.replace('_', ' ').toUpperCase();
+  sourceSelect.appendChild(option);
+});
+```
+
+### Example: Advanced search with multiple filters
+
+```javascript
+const filters = {
+  category: 'Frutas',
+  category2: 'Frutas Frescas',
+  level: 'low',
+  source: 'nutritional_table',
+  hasNutrition: 'true'
+};
+
+const queryString = new URLSearchParams(filters).toString();
+const searchResponse = await fetch(
+  `https://api.ceboelha.com/foods?${queryString}`
+);
+```
+
+## Notes
+
+- All arrays are sorted alphabetically for consistent UI rendering
+- Empty values are filtered out - only categories/sources with actual data are returned
+- Category lists represent the complete taxonomy available in the database
+- FODMAP levels are always returned in the same order: `["free", "low", "medium", "high"]`
+- Use these filter options with the `/foods` search endpoint to build powerful search interfaces
+- The endpoint is optimized for fast response times and can be called frequently

@@ -1,0 +1,231 @@
+---
+title: Update Profile
+description: Update the authenticated user's profile information and preferences
+---
+
+## Endpoint
+
+```
+PATCH /profile
+```
+
+Updates the authenticated user's profile information, including name, avatar, and preferences. All fields are optional - only provided fields will be updated.
+
+## Authentication
+
+This endpoint requires authentication. Include a valid JWT token in the Authorization header.
+
+## Request
+
+### Headers
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token for authentication
+  
+  Example: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...`
+</ParamField>
+
+<ParamField header="Content-Type" type="string" required>
+  Must be `application/json`
+</ParamField>
+
+### Body Parameters
+
+<ParamField body="name" type="string">
+  User's display name
+  
+  - Minimum length: 2 characters
+  - Maximum length: 100 characters
+</ParamField>
+
+<ParamField body="avatar" type="string">
+  URL to user's profile picture
+  
+  Can be a data URL, external URL, or empty string to remove avatar
+</ParamField>
+
+<ParamField body="preferences" type="object">
+  User preferences and settings
+  
+  <ParamField body="theme" type="string">
+    UI theme preference
+    
+    Allowed values: `light`, `dark`, `system`
+  </ParamField>
+  
+  <ParamField body="notifications" type="boolean">
+    Enable or disable notifications
+  </ParamField>
+  
+  <ParamField body="soundEnabled" type="boolean">
+    Enable or disable sound effects
+  </ParamField>
+  
+  <ParamField body="language" type="string">
+    Interface language
+    
+    Allowed values: `pt-BR`, `en`
+  </ParamField>
+  
+  <ParamField body="fodmapPhase" type="string">
+    Current FODMAP diet phase
+    
+    Allowed values:
+    - `elimination` - Initial elimination phase
+    - `reintroduction` - Testing foods phase
+    - `personalization` - Long-term customized diet
+  </ParamField>
+</ParamField>
+
+## Response
+
+<ResponseField name="success" type="boolean" required>
+  Indicates if the request was successful
+</ResponseField>
+
+<ResponseField name="data" type="object" required>
+  Updated user profile object (same structure as GET /profile)
+</ResponseField>
+
+<ResponseField name="message" type="string" required>
+  Success message: "Perfil atualizado com sucesso!"
+</ResponseField>
+
+## Example
+
+### Update Name and Theme
+
+```bash
+curl -X PATCH https://api.ceboelha.com/profile \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "João Silva",
+    "preferences": {
+      "theme": "dark"
+    }
+  }'
+```
+
+### Update FODMAP Phase
+
+```bash
+curl -X PATCH https://api.ceboelha.com/profile \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "preferences": {
+      "fodmapPhase": "reintroduction"
+    }
+  }'
+```
+
+### Update Multiple Preferences
+
+```bash
+curl -X PATCH https://api.ceboelha.com/profile \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Maria Santos",
+    "preferences": {
+      "theme": "light",
+      "notifications": false,
+      "soundEnabled": true,
+      "language": "en"
+    }
+  }'
+```
+
+### Response
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "email": "user@example.com",
+    "name": "Maria Santos",
+    "avatar": "https://example.com/avatar.jpg",
+    "role": "user",
+    "status": "active",
+    "preferences": {
+      "theme": "light",
+      "notifications": false,
+      "soundEnabled": true,
+      "language": "en",
+      "fodmapPhase": "elimination"
+    },
+    "dietSettings": {
+      "enabled": true,
+      "preset": "balanced",
+      "limits": {
+        "calories": 2000,
+        "carbs": 225,
+        "protein": 75,
+        "fat": 65,
+        "sugar": 40,
+        "fiber": 28,
+        "sodium": 2300
+      },
+      "showRemaining": true,
+      "showProgressBars": true,
+      "warningThreshold": 80,
+      "diaryMode": "quick"
+    },
+    "stats": {
+      "daysUsingApp": 45,
+      "totalMealsLogged": 120,
+      "totalSymptomsLogged": 30,
+      "currentStreak": 7,
+      "longestStreak": 14,
+      "achievementsUnlocked": 5,
+      "foodsTested": 25,
+      "triggersIdentified": 3,
+      "lastActive": "2026-03-03T14:30:00.000Z"
+    },
+    "createdAt": "2026-01-15T10:00:00.000Z",
+    "updatedAt": "2026-03-03T14:35:00.000Z"
+  },
+  "message": "Perfil atualizado com sucesso!"
+}
+```
+
+## Error Responses
+
+### 400 Bad Request
+
+```json
+{
+  "success": false,
+  "error": "Validation failed",
+  "details": {
+    "name": "Nome deve ter no mínimo 2 caracteres"
+  }
+}
+```
+
+### 401 Unauthorized
+
+```json
+{
+  "success": false,
+  "error": "Token inválido ou expirado"
+}
+```
+
+### 404 Not Found
+
+```json
+{
+  "success": false,
+  "error": "Usuário não encontrado"
+}
+```
+
+## Notes
+
+- All fields are optional - send only the fields you want to update
+- Preferences are merged with existing preferences, not replaced
+- The response includes the complete updated user profile
+- Profile updates are logged in the activity log for security purposes

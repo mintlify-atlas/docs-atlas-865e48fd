@@ -1,0 +1,323 @@
+---
+title: Food Diary
+description: Learn how to log meals, track nutrition, and manage your daily food intake
+---
+
+The Food Diary is the core feature for tracking your daily food consumption and correlating it with symptoms. This guide covers all diary management workflows.
+
+## Understanding Diary Entries
+
+Diary entries come in two types:
+
+- **Meal entries** - Record foods consumed (breakfast, lunch, dinner, snacks)
+- **Symptom entries** - Record IBS symptoms and their intensity
+
+Each entry is associated with a specific date and time.
+
+## Logging a Meal
+
+Create a meal entry with one or more foods.
+
+<Steps>
+  <Step title="Prepare meal data">
+    Gather the required information:
+    - **Date**: When you ate (YYYY-MM-DD format)
+    - **Meal type**: breakfast, lunch, dinner, or snack
+    - **Time**: When you ate (HH:MM format)
+    - **Foods**: Array of foods with quantities
+  </Step>
+
+  <Step title="Log the meal">
+    ```bash
+    curl -X POST https://api.ceboelha.com/diary/meal \
+      --cookie "ceboelha_access_token=..." \
+      -H "Content-Type: application/json" \
+      -d '{
+        "date": "2026-03-03",
+        "meal": {
+          "type": "breakfast",
+          "time": "08:30",
+          "foods": [
+            {
+              "foodId": 1234,
+              "foodName": "Pão integral",
+              "portion": "2 fatias",
+              "quantity_g": 60,
+              "calculatedNutrition": {
+                "calories": 140,
+                "carbs": 24,
+                "protein": 6,
+                "fat": 2,
+                "sugar": 3,
+                "fiber": 4,
+                "sodium": 200
+              }
+            },
+            {
+              "foodId": 5678,
+              "foodName": "Banana",
+              "portion": "1 unidade média",
+              "quantity_g": 120,
+              "calculatedNutrition": {
+                "calories": 105,
+                "carbs": 27,
+                "protein": 1,
+                "fat": 0,
+                "sugar": 14,
+                "fiber": 3,
+                "sodium": 1
+              }
+            }
+          ],
+          "notes": "Café da manhã leve"
+        }
+      }'
+    ```
+
+    <Tip>
+      The `calculatedNutrition` field is optional but recommended for accurate macro tracking. You can get nutrition data from the Foods API.
+    </Tip>
+  </Step>
+
+  <Step title="Receive confirmation">
+    ```json
+    {
+      "success": true,
+      "data": {
+        "_id": "507f1f77bcf86cd799439011",
+        "userId": "507f191e810c19729de860ea",
+        "type": "meal",
+        "date": "2026-03-03",
+        "meal": {
+          "type": "breakfast",
+          "time": "08:30",
+          "foods": [...],
+          "notes": "Café da manhã leve"
+        },
+        "createdAt": "2026-03-03T08:35:00.000Z"
+      }
+    }
+    ```
+  </Step>
+</Steps>
+
+**Meal types:**
+- `breakfast` - Café da manhã
+- `lunch` - Almoço
+- `dinner` - Jantar
+- `snack` - Lanche
+
+## Marking Foods as Problematic
+
+If you suspect a food caused symptoms, mark it as problematic:
+
+```bash
+curl -X POST https://api.ceboelha.com/diary/meal \
+  --cookie "ceboelha_access_token=..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "date": "2026-03-03",
+    "meal": {
+      "type": "lunch",
+      "time": "13:00",
+      "foods": [
+        {
+          "foodId": 9012,
+          "foodName": "Leite integral",
+          "portion": "1 copo",
+          "quantity_g": 240,
+          "markedAsBad": true
+        }
+      ]
+    }
+  }'
+```
+
+<Note>
+  Foods marked with `markedAsBad: true` will be automatically added to your problematic foods list for better tracking.
+</Note>
+
+## Retrieving Diary Entries
+
+### List All Entries
+
+Get all diary entries for the authenticated user:
+
+```bash
+curl "https://api.ceboelha.com/diary" \
+  --cookie "ceboelha_access_token=..."
+```
+
+### Filter by Date
+
+Get entries for a specific date:
+
+```bash
+curl "https://api.ceboelha.com/diary?date=2026-03-03" \
+  --cookie "ceboelha_access_token=..."
+```
+
+### Filter by Date Range
+
+Get entries between two dates:
+
+```bash
+curl "https://api.ceboelha.com/diary?startDate=2026-03-01&endDate=2026-03-07" \
+  --cookie "ceboelha_access_token=..."
+```
+
+### Filter by Type
+
+Get only meal entries:
+
+```bash
+curl "https://api.ceboelha.com/diary?type=meal" \
+  --cookie "ceboelha_access_token=..."
+```
+
+Get only symptom entries:
+
+```bash
+curl "https://api.ceboelha.com/diary?type=symptom" \
+  --cookie "ceboelha_access_token=..."
+```
+
+### Get Single Entry
+
+Retrieve a specific entry by ID:
+
+```bash
+curl "https://api.ceboelha.com/diary/507f1f77bcf86cd799439011" \
+  --cookie "ceboelha_access_token=..."
+```
+
+## Daily Summary
+
+Get a summary of a specific day:
+
+```bash
+curl "https://api.ceboelha.com/diary/summary/day/2026-03-03" \
+  --cookie "ceboelha_access_token=..."
+```
+
+**Response includes:**
+- Number of meals logged
+- Number of symptoms logged
+- Worst symptom intensity
+- Day status (`great`, `good`, `okay`, `bad`, `terrible`)
+- Problematic foods consumed
+
+```json
+{
+  "success": true,
+  "data": {
+    "date": "2026-03-03",
+    "mealsCount": 4,
+    "symptomsCount": 2,
+    "worstIntensity": 3,
+    "status": "okay",
+    "problematicFoodsConsumed": [
+      {
+        "foodId": 9012,
+        "foodName": "Leite integral"
+      }
+    ]
+  }
+}
+```
+
+## Monthly Calendar Summary
+
+Get a summary for all days in a month (perfect for calendar views):
+
+```bash
+curl "https://api.ceboelha.com/diary/summary/month/2026/3" \
+  --cookie "ceboelha_access_token=..."
+```
+
+Returns a day-by-day summary for the entire month.
+
+## Updating Diary Entries
+
+Update an existing meal or symptom entry:
+
+```bash
+curl -X PATCH https://api.ceboelha.com/diary/507f1f77bcf86cd799439011 \
+  --cookie "ceboelha_access_token=..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "meal": {
+      "notes": "Esqueci de mencionar que comi devagar"
+    }
+  }'
+```
+
+You can update:
+- Meal type, time, foods, or notes
+- Symptom type, intensity, time, duration, or notes
+
+<Tip>
+  You only need to include the fields you want to change. Other fields will remain unchanged.
+</Tip>
+
+## Deleting Diary Entries
+
+Remove an entry from your diary:
+
+```bash
+curl -X DELETE https://api.ceboelha.com/diary/507f1f77bcf86cd799439011 \
+  --cookie "ceboelha_access_token=..."
+```
+
+## Best Practices
+
+<Tip>
+  **Log meals immediately**: Record your meals right after eating for more accurate tracking and better recall of portion sizes.
+</Tip>
+
+<Tip>
+  **Include portion sizes**: Always specify `portion` and `quantity_g` for accurate nutrition tracking.
+</Tip>
+
+<Tip>
+  **Add notes**: Use the `notes` field to record context like "ate quickly", "stressed", or "new food" to help identify patterns.
+</Tip>
+
+<Note>
+  The API automatically calculates total daily nutrition from all your logged meals when diet settings are enabled.
+</Note>
+
+## Common Workflows
+
+### Quick Meal Logging
+
+For users who just want to track foods without detailed macros:
+
+```bash
+curl -X POST https://api.ceboelha.com/diary/meal \
+  --cookie "ceboelha_access_token=..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "date": "2026-03-03",
+    "meal": {
+      "type": "snack",
+      "time": "16:00",
+      "foods": [
+        {
+          "foodId": 1111,
+          "foodName": "Maçã",
+          "portion": "1 unidade"
+        }
+      ]
+    }
+  }'
+```
+
+### Detailed Macro Tracking
+
+For users following specific diet plans:
+
+1. Enable diet settings with your daily limits
+2. Log meals with complete `calculatedNutrition` data
+3. Check daily summary to see progress toward limits
+4. Use insights to see weekly nutrition trends

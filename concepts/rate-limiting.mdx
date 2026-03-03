@@ -1,0 +1,418 @@
+---
+title: Rate Limiting
+description: Request throttling and abuse prevention with configurable limits per endpoint
+---
+
+## Overview
+
+Ceboelha API implements comprehensive rate limiting to prevent abuse and ensure fair usage:
+
+- **Per-IP tracking**: Rate limits are enforced per client IP address
+- **Endpoint-specific limits**: Different endpoints have different thresholds
+- **In-memory storage**: Fast, low-latency rate limit checks (upgradeable to Redis)
+- **Automatic cleanup**: Expired entries are removed every minute
+- **Response headers**: Clients receive limit information in headers
+
+## Rate Limit Tiers
+
+### General API Limit
+
+**Default for most endpoints:**
+
+- **100 requests per minute** per IP
+- Applied to: Diary entries, food searches, profile updates, etc.
+
+```typescript
+// rate-limiter.middleware.ts:151-155
+export const generalRateLimiter = createRateLimiter({
+  windowMs: env.RATE_LIMIT_WINDOW,      // 60000ms (1 minute)
+  maxRequests: env.RATE_LIMIT_MAX,      // 100 requests
+  message: 'Muitas requisições. Aguarde um momento e tente novamente.',
+})
+```
+
+**Configuration** (`env.ts:50-52`):
+
+```bash
+RATE_LIMIT_MAX=100
+RATE_LIMIT_WINDOW=60000  # 1 minute in milliseconds
+```
+
+### Authentication Endpoints (Stricter)
+
+**For login/register endpoints:**
+
+- **5 requests per 15 minutes** per IP
+- Prevents brute force attacks
+- Applied to: `/auth/register`, `/auth/login`, `/auth/refresh`
+
+```typescript
+// rate-limiter.middleware.ts:161-165
+export const authRateLimiter = createRateLimiter({
+  windowMs: env.AUTH_RATE_LIMIT_WINDOW,  // 900000ms (15 minutes)
+  maxRequests: env.AUTH_RATE_LIMIT_MAX,  // 5 requests
+  message: 'Muitas tentativas de login. Aguarde 15 minutos antes de tentar novamente.',
+})
+```
+
+**Configuration** (`env.ts:54-56`):
+
+```bash
+AUTH_RATE_LIMIT_MAX=5
+AUTH_RATE_LIMIT_WINDOW=900000  # 15 minutes in milliseconds
+```
+
+### Sensitive Operations (Most Strict)
+
+**For password changes, account deletion, session revocation:**
+
+- **3 requests per 5 minutes** per IP
+- Applied to: `/auth/sessions/:id` (DELETE), `/users/change-password`, etc.
+
+```typescript
+// rate-limiter.middleware.ts:171-175
+export const sensitiveRateLimiter = createRateLimiter({
+  windowMs: 300000,  // 5 minutes
+  maxRequests: 3,
+  message: 'Muitas tentativas. Aguarde alguns minutos antes de tentar novamente.',
+})
+```
+
+### Global IP Limit
+
+**Across ALL endpoints:**
+
+- **200 requests per minute** per IP
+- Prevents total API abuse from a single source
+
+```typescript
+// rate-limiter.middleware.ts:185-209
+export function createGlobalRateLimiter() {
+  return new Elysia({ name: 'global-rate-limiter' }).derive(
+    { as: 'scoped' },
+    ({ request }) => {
+      const ip = /* extract IP */
+      const key = `global:${ip}`
+      const windowMs = 60000     // 1 minute
+      const maxRequests = 200    // 200 requests total
+
+      const entry = globalStore.increment(key, windowMs)
+
+      if (entry.count > maxRequests) {
+        throw new RateLimitError(
+          'Limite de requisições excedido. Tente novamente em breve.'
+        )
+      }
+    }
+  )
+}
+```
+
+### Admin Endpoints
+
+**For admin-only operations:**
+
+**Read operations:**
+- **30 requests per minute** per IP
+
+**Write operations (create/update/delete):**
+- **10 requests per minute** per IP
+
+```typescript
+// rate-limiter.middleware.ts:222-236
+export const adminRateLimiter = createRateLimiter({
+  windowMs: 60000,
+  maxRequests: 30,
+  message: 'Limite de requisições admin excedido. Aguarde antes de continuar.',
+})
+
+export const adminWriteRateLimiter = createRateLimiter({
+  windowMs: 60000,
+  maxRequests: 10,
+  message: 'Muitas operações de escrita. Aguarde antes de continuar.',
+})
+```
+
+## Rate Limit Headers
+
+Every response includes rate limit information:
+
+```http
+HTTP/1.1 200 OK
+X-RateLimit-Limit: 100
+X-RateLimit-Remaining: 87
+X-RateLimit-Reset: 1705320600000
+```
+
+<ParamField path="X-RateLimit-Limit" type="number">
+  Maximum number of requests allowed in the current window
+</ParamField>
+
+<ParamField path="X-RateLimit-Remaining" type="number">
+  Number of requests remaining in the current window
+</ParamField>
+
+<ParamField path="X-RateLimit-Reset" type="number">
+  Unix timestamp (milliseconds) when the rate limit window resets
+</ParamField>
+
+**Implementation** (`rate-limiter.middleware.ts:133-140`):
+
+```typescript
+.onAfterHandle(({ set, rateLimitInfo }) => {
+  if (rateLimitInfo) {
+    set.headers['X-RateLimit-Limit'] = String(rateLimitInfo.limit)
+    set.headers['X-RateLimit-Remaining'] = String(rateLimitInfo.remaining)
+    set.headers['X-RateLimit-Reset'] = String(rateLimitInfo.reset)
+  }
+})
+```
+
+## Rate Limit Exceeded Response
+
+When a rate limit is exceeded, you'll receive a `429 Too Many Requests` response:
+
+```json
+{
+  "success": false,
+  "error": "RateLimitError",
+  "code": "RATE_LIMIT",
+  "message": "Muitas requisições. Aguarde um momento e tente novamente."
+}
+```
+
+**The custom error class** (`errors/index.ts:52-57`):
+
+```typescript
+export class RateLimitError extends AppError {
+  constructor(message: string = 'Muitas requisições. Tente novamente mais tarde.') {
+    super(message, 429, 'RATE_LIMIT')
+    this.name = 'RateLimitError'
+  }
+}
+```
+
+## How It Works
+
+### IP Address Extraction
+
+The client IP is extracted from request headers with fallbacks:
+
+```typescript
+// rate-limiter.middleware.ts:103-106
+const ip =
+  request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+  request.headers.get('x-real-ip') ||
+  'unknown'
+```
+
+1. First tries `X-Forwarded-For` header (from proxies/load balancers)
+2. Falls back to `X-Real-IP` header
+3. Defaults to `'unknown'` if neither exists
+
+<Note>
+If you're behind a proxy (Nginx, Cloudflare, etc.), make sure it sets the `X-Forwarded-For` header correctly.
+</Note>
+
+### Rate Limit Key
+
+Rate limits are tracked per IP **and** path:
+
+```typescript
+// rate-limiter.middleware.ts:108-110
+const path = new URL(request.url).pathname
+const key = `${ip}:${path}`
+```
+
+This means:
+- `192.168.1.100:/auth/login` has a separate limit from
+- `192.168.1.100:/diary/entries`
+
+### In-Memory Store
+
+The rate limiter uses an in-memory Map for fast lookups:
+
+```typescript
+// rate-limiter.middleware.ts:34-85
+class RateLimitStore {
+  private store: Map<string, RateLimitEntry> = new Map()
+  private cleanupInterval: Timer
+
+  increment(key: string, windowMs: number): RateLimitEntry {
+    const now = Date.now()
+    const existing = this.get(key)
+
+    if (existing) {
+      existing.count++
+      return existing
+    }
+
+    const entry: RateLimitEntry = {
+      count: 1,
+      resetAt: now + windowMs,
+    }
+    this.store.set(key, entry)
+    return entry
+  }
+
+  private cleanup() {
+    const now = Date.now()
+    for (const [key, entry] of this.store.entries()) {
+      if (now > entry.resetAt) {
+        this.store.delete(key)
+      }
+    }
+  }
+}
+```
+
+**Automatic cleanup runs every minute** to remove expired entries (`rate-limiter.middleware.ts:40`).
+
+<Warning>
+The in-memory store is **not shared across server instances**. For production with multiple servers, consider upgrading to Redis.
+</Warning>
+
+### Window Reset
+
+Rate limit windows use **sliding windows**:
+
+1. First request at `10:00:00` starts a window that expires at `10:01:00`
+2. Subsequent requests within that minute increment the counter
+3. After `10:01:00`, the counter resets to 0
+4. A new window starts on the next request
+
+```typescript
+// rate-limiter.middleware.ts:56-69
+increment(key: string, windowMs: number): RateLimitEntry {
+  const now = Date.now()
+  const existing = this.get(key)
+
+  if (existing) {
+    existing.count++  // Increment within window
+    return existing
+  }
+
+  // Create new window
+  const entry: RateLimitEntry = {
+    count: 1,
+    resetAt: now + windowMs,
+  }
+  this.store.set(key, entry)
+  return entry
+}
+```
+
+## Custom Rate Limiting
+
+You can create custom rate limiters for specific endpoints:
+
+```typescript
+import { createRateLimiter } from '@/shared/middlewares/rate-limiter.middleware'
+
+// Custom limit: 10 requests per 30 seconds
+const customLimiter = createRateLimiter({
+  windowMs: 30000,          // 30 seconds
+  maxRequests: 10,          // 10 requests
+  message: 'Custom rate limit exceeded',
+})
+
+// Apply to route
+export const myController = new Elysia()
+  .use(customLimiter)
+  .get('/custom-endpoint', async () => {
+    return { success: true }
+  })
+```
+
+## Best Practices
+
+### For API Clients
+
+1. **Check response headers** before making requests:
+   ```javascript
+   const remaining = response.headers.get('X-RateLimit-Remaining')
+   if (remaining < 10) {
+     console.warn('Approaching rate limit!')
+   }
+   ```
+
+2. **Implement exponential backoff** when receiving 429 errors:
+   ```javascript
+   async function fetchWithRetry(url, maxRetries = 3) {
+     for (let i = 0; i < maxRetries; i++) {
+       const response = await fetch(url)
+       
+       if (response.status === 429) {
+         const resetTime = response.headers.get('X-RateLimit-Reset')
+         const waitTime = Math.max(1000, resetTime - Date.now())
+         await sleep(waitTime * (i + 1))  // Exponential backoff
+         continue
+       }
+       
+       return response
+     }
+   }
+   ```
+
+3. **Batch requests** when possible instead of making many small requests
+
+### For Server Administrators
+
+1. **Monitor rate limit hits** in logs to detect abuse patterns
+2. **Adjust limits** via environment variables based on usage:
+   ```bash
+   # More generous for trusted environments
+   RATE_LIMIT_MAX=200
+   AUTH_RATE_LIMIT_MAX=10
+   ```
+3. **Consider Redis** for production multi-server deployments:
+   ```typescript
+   // Example Redis-backed rate limiter
+   class RedisRateLimitStore {
+     async increment(key: string, windowMs: number) {
+       const count = await redis.incr(key)
+       if (count === 1) {
+         await redis.expire(key, Math.ceil(windowMs / 1000))
+       }
+       return count
+     }
+   }
+   ```
+
+## Bypassing Rate Limits (Development)
+
+Rate limits apply in all environments. For local development testing:
+
+**Option 1: Increase limits**
+```bash
+# .env.local
+RATE_LIMIT_MAX=1000
+AUTH_RATE_LIMIT_MAX=100
+```
+
+**Option 2: Clear rate limit state**
+```typescript
+// In development tools
+import { globalStore } from '@/shared/middlewares/rate-limiter.middleware'
+
+// Clear all rate limits (destructive!)
+globalStore.destroy()
+```
+
+<Warning>
+Never disable rate limiting in production. It's a critical security feature.
+</Warning>
+
+## Comparison with Account Lockout
+
+Rate limiting and account lockout work together but serve different purposes:
+
+| Feature | Rate Limiting | Account Lockout |
+|---------|---------------|------------------|
+| **Scope** | Per IP + endpoint | Per email address |
+| **Purpose** | Prevent API abuse | Prevent brute force login |
+| **Duration** | Short windows (1-15 min) | Longer duration (15 min) |
+| **Reset** | Automatic after window | After successful login |
+| **Tracked in** | Memory (Map) | Database (MongoDB) |
+
+See [Authentication](/concepts/authentication#account-lockout) for account lockout details.

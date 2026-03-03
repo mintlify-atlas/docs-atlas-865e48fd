@@ -1,0 +1,184 @@
+---
+title: Change Email
+description: Change the authenticated user's email address with password verification
+---
+
+## Endpoint
+
+```
+POST /profile/email
+```
+
+Changes the authenticated user's email address. For security, this operation requires the user's current password for verification.
+
+## Authentication
+
+This endpoint requires authentication. Include a valid JWT token in the Authorization header.
+
+## Request
+
+### Headers
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token for authentication
+  
+  Example: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...`
+</ParamField>
+
+<ParamField header="Content-Type" type="string" required>
+  Must be `application/json`
+</ParamField>
+
+### Body Parameters
+
+<ParamField body="newEmail" type="string" required>
+  The new email address
+  
+  - Must be a valid email format
+  - Must not already be in use by another account
+  - Will be normalized to lowercase
+</ParamField>
+
+<ParamField body="password" type="string" required>
+  User's current password for verification
+  
+  Required for security purposes to confirm the user's identity
+</ParamField>
+
+## Response
+
+<ResponseField name="success" type="boolean" required>
+  Indicates if the request was successful
+</ResponseField>
+
+<ResponseField name="data" type="object" required>
+  Updated user profile object with the new email
+</ResponseField>
+
+<ResponseField name="message" type="string" required>
+  Success message: "E-mail alterado com sucesso!"
+</ResponseField>
+
+## Example
+
+```bash
+curl -X POST https://api.ceboelha.com/profile/email \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "newEmail": "newemail@example.com",
+    "password": "myCurrentPassword123"
+  }'
+```
+
+### Response
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "email": "newemail@example.com",
+    "name": "João Silva",
+    "avatar": "https://example.com/avatar.jpg",
+    "role": "user",
+    "status": "active",
+    "preferences": {
+      "theme": "dark",
+      "notifications": true,
+      "soundEnabled": true,
+      "language": "pt-BR",
+      "fodmapPhase": "elimination"
+    },
+    "dietSettings": {
+      "enabled": true,
+      "preset": "balanced",
+      "limits": {
+        "calories": 2000,
+        "carbs": 225,
+        "protein": 75,
+        "fat": 65,
+        "sugar": 40,
+        "fiber": 28,
+        "sodium": 2300
+      },
+      "showRemaining": true,
+      "showProgressBars": true,
+      "warningThreshold": 80,
+      "diaryMode": "quick"
+    },
+    "stats": {
+      "daysUsingApp": 45,
+      "totalMealsLogged": 120,
+      "totalSymptomsLogged": 30,
+      "currentStreak": 7,
+      "longestStreak": 14,
+      "achievementsUnlocked": 5,
+      "foodsTested": 25,
+      "triggersIdentified": 3,
+      "lastActive": "2026-03-03T14:30:00.000Z"
+    },
+    "createdAt": "2026-01-15T10:00:00.000Z",
+    "updatedAt": "2026-03-03T14:35:00.000Z"
+  },
+  "message": "E-mail alterado com sucesso!"
+}
+```
+
+## Error Responses
+
+### 400 Bad Request - Invalid Email Format
+
+```json
+{
+  "success": false,
+  "error": "Validation failed",
+  "details": {
+    "newEmail": "Must be a valid email address"
+  }
+}
+```
+
+### 401 Unauthorized - Invalid Password
+
+```json
+{
+  "success": false,
+  "error": "Senha incorreta"
+}
+```
+
+### 401 Unauthorized - Invalid Token
+
+```json
+{
+  "success": false,
+  "error": "Token inválido ou expirado"
+}
+```
+
+### 404 Not Found
+
+```json
+{
+  "success": false,
+  "error": "Usuário não encontrado"
+}
+```
+
+### 409 Conflict - Email Already in Use
+
+```json
+{
+  "success": false,
+  "error": "Este e-mail já está em uso"
+}
+```
+
+## Security Notes
+
+- Password verification is required to prevent unauthorized email changes
+- The email is normalized (lowercased and trimmed) before saving
+- Email uniqueness is enforced - the new email cannot belong to another account
+- The email change is logged in the activity log for audit purposes
+- Your current session remains valid after changing email

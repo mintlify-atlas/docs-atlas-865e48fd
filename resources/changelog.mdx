@@ -1,0 +1,235 @@
+---
+title: Changelog
+description: Release history and version updates for the Ceboelha API
+---
+
+All notable changes to the Ceboelha API will be documented here.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [0.1.0] - Current Version
+
+### Overview
+
+Initial release of the Ceboelha API - a comprehensive REST API for managing FODMAP diet and IBS symptoms tracking.
+
+### Features
+
+#### Authentication & Security
+- JWT-based authentication with dual token system
+  - Short-lived access tokens (15 minutes)
+  - Long-lived refresh tokens (7 days)
+- Token rotation and reuse detection
+- Bcrypt password hashing with configurable salt rounds
+- Account lockout after failed login attempts
+- Comprehensive rate limiting
+  - Global: 200 requests/minute per IP
+  - General API: 100 requests/minute
+  - Auth endpoints: 5 requests/15 minutes
+  - Sensitive operations: 3 requests/5 minutes
+  - Admin operations: tiered limits
+- Security headers (CSP, HSTS, X-Frame-Options, etc.)
+- CORS configuration with origin whitelisting
+
+#### User Management
+- User registration and authentication
+- Profile management
+- Password change functionality
+- Account deletion
+- Role-based access control (user, admin)
+
+#### Food Database
+- Comprehensive FODMAP food database
+- Search and filtering capabilities
+- FODMAP level indicators (low, moderate, high)
+- Serving size information
+- Category-based organization
+
+#### Food Diary
+- Daily meal tracking
+- Symptom logging
+- Meal timing and notes
+- Retrospective data entry
+
+#### Problematic Foods
+- Track foods that trigger symptoms
+- Severity ratings
+- Personal notes
+- Pattern identification
+
+#### Insights & Analytics
+- Food frequency analysis
+- Symptom pattern detection
+- Correlation between foods and symptoms
+- Statistical summaries
+
+#### Content Management
+- Educational articles
+- FODMAP-friendly recipes
+- News and updates
+- Category-based organization
+
+#### Gamification
+- Achievement system
+- Progress tracking
+- User engagement features
+
+#### Admin Features
+- User management dashboard
+- Content moderation
+- Food database management
+- System statistics
+- Protected with enhanced security
+
+### Technical Stack
+
+- **Runtime**: Bun (latest)
+- **Framework**: Elysia (latest)
+- **Database**: MongoDB with Mongoose ODM
+- **Authentication**: JWT with @elysiajs/jwt and jose
+- **Documentation**: Swagger/Scalar UI
+- **Password Hashing**: bcrypt
+- **Date Handling**: dayjs
+- **Code Quality**: Biome for linting and formatting
+
+### Infrastructure
+
+- Docker support with multi-stage builds
+- Non-root user for enhanced container security
+- Graceful shutdown handling
+- Health check endpoint
+- Environment-based configuration
+- Static file serving
+
+### API Documentation
+
+- Interactive Swagger/Scalar documentation at `/docs`
+- Comprehensive endpoint descriptions
+- Request/response examples
+- Authentication integration
+- Organized by functional tags
+
+### Developer Experience
+
+- Hot reload in development mode
+- Database seeding scripts
+- MongoDB connection testing utility
+- Comprehensive error handling
+- Clear error messages and codes
+- TypeScript support throughout
+
+### Configuration
+
+- Environment variable validation
+- Minimum secret length enforcement
+- Configurable rate limits
+- Flexible CORS settings
+- Development/production modes
+
+---
+
+## Future Releases
+
+Upcoming features and improvements will be documented here as they are released.
+
+### Planned Features
+
+Potential future enhancements:
+
+- Email verification for new accounts
+- Password reset via email
+- Two-factor authentication (2FA)
+- Export user data (GDPR compliance)
+- Advanced analytics and reporting
+- Food diary export (PDF, CSV)
+- Meal planning features
+- Shopping list generation
+- Social features (sharing recipes)
+- Mobile app integration
+- Webhook support
+- GraphQL API option
+- Redis-backed rate limiting for distributed deployments
+- Real-time notifications
+
+<Note>
+  Feature requests and suggestions are welcome! Please open an issue on GitHub to discuss.
+</Note>
+
+---
+
+## Version History Format
+
+Future releases will follow this format:
+
+```
+## [Version] - YYYY-MM-DD
+
+### Added
+- New features
+
+### Changed
+- Changes to existing functionality
+
+### Deprecated
+- Features marked for removal
+
+### Removed
+- Removed features
+
+### Fixed
+- Bug fixes
+
+### Security
+- Security improvements and fixes
+```
+
+---
+
+## Getting Updates
+
+To stay informed about new releases:
+
+- **GitHub**: Watch the repository for release notifications
+- **API**: Check the `/health` endpoint for current version
+- **Swagger**: Version is displayed in API documentation
+
+### Checking Current Version
+
+```bash
+curl https://api.ceboelha.com/health
+```
+
+Response:
+```json
+{
+  "success": true,
+  "status": "healthy",
+  "version": "0.1.0",
+  "timestamp": "2026-03-03T...",
+  "environment": "production"
+}
+```
+
+---
+
+## Migration Guides
+
+When breaking changes are introduced, detailed migration guides will be provided here.
+
+---
+
+## Support
+
+For questions about changes or upgrade assistance:
+
+- Review [API Documentation](/api/auth/overview)
+- Check [Contributing Guidelines](/resources/contributing)
+- Open an issue on GitHub
+- Contact support@ceboelha.app
+
+---
+
+<Note>
+  This changelog will be updated with each release. Subscribe to GitHub releases to receive notifications.
+</Note>

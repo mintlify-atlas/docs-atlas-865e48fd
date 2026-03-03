@@ -1,0 +1,112 @@
+---
+title: Delete Diary Entry
+description: Permanently remove a meal or symptom entry from the diary
+---
+
+## Endpoint
+
+```
+DELETE /diary/:id
+```
+
+## Authentication
+
+This endpoint requires authentication via Bearer token.
+
+```bash
+Authorization: Bearer <token>
+```
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  Entry ID (MongoDB ObjectId - 24 hexadecimal characters)
+</ParamField>
+
+## Response
+
+<ResponseField name="success" type="boolean">
+  Indicates if the deletion was successful
+</ResponseField>
+
+## Examples
+
+### Delete a diary entry
+
+```bash
+curl -X DELETE "https://api.ceboelha.com/diary/65f1a2b3c4d5e6f7a8b9c0d1" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+### Delete with error handling
+
+```bash
+curl -X DELETE "https://api.ceboelha.com/diary/65f1a2b3c4d5e6f7a8b9c0d1" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -w "\nHTTP Status: %{http_code}\n"
+```
+
+<ResponseExample>
+```json
+{
+  "success": true
+}
+```
+</ResponseExample>
+
+## Error Responses
+
+### Entry not found
+
+Status: 404
+
+```json
+{
+  "success": false,
+  "error": "Entry not found"
+}
+```
+
+### Unauthorized (not the entry owner)
+
+Status: 403
+
+```json
+{
+  "success": false,
+  "error": "Forbidden"
+}
+```
+
+### Not authenticated
+
+Status: 401
+
+```json
+{
+  "success": false,
+  "error": "Unauthorized"
+}
+```
+
+### Invalid entry ID format
+
+Status: 400
+
+```json
+{
+  "success": false,
+  "error": "Invalid entry ID format"
+}
+```
+
+## Notes
+
+- This action is **permanent** and cannot be undone
+- You can only delete entries that belong to your user account
+- Deleting an entry will also affect:
+  - Daily summaries and statistics
+  - Monthly calendar views
+  - Symptoms overview and trends
+  - Problematic food correlations (if the entry was involved in identifying triggers)
+- Make sure to confirm the deletion action in your application UI before calling this endpoint

@@ -1,0 +1,173 @@
+---
+title: 'List Problematic Foods'
+api: 'GET /problematic-foods'
+description: 'Retrieve all foods marked as problematic by the authenticated user'
+---
+
+Returns a list of all foods that have been marked as problematic, including incident history and current status.
+
+<Info>
+  All problematic foods API endpoints require authentication via Bearer token.
+</Info>
+
+## Authentication
+
+<ParamField path="header.Authorization" type="string" required>
+  Bearer token for authentication. Format: `Bearer YOUR_TOKEN`
+</ParamField>
+
+## Response
+
+<ResponseField name="success" type="boolean" required>
+  Indicates whether the request was successful.
+</ResponseField>
+
+<ResponseField name="data" type="object[]" required>
+  Array of problematic food records.
+  
+  <Expandable title="properties">
+    <ResponseField name="_id" type="string" required>
+      Unique identifier for the problematic food record.
+    </ResponseField>
+    
+    <ResponseField name="userId" type="string" required>
+      ID of the user who marked this food as problematic.
+    </ResponseField>
+    
+    <ResponseField name="foodId" type="number" required>
+      Reference ID to the food in the foods database.
+    </ResponseField>
+    
+    <ResponseField name="foodName" type="string" required>
+      Name of the problematic food.
+    </ResponseField>
+    
+    <ResponseField name="totalIncidents" type="number" required>
+      Total number of incidents recorded for this food.
+    </ResponseField>
+    
+    <ResponseField name="lastIncident" type="string" required>
+      Date of the most recent incident (ISO date format: YYYY-MM-DD).
+    </ResponseField>
+    
+    <ResponseField name="status" type="string" required>
+      Current status: `suspected` (1-2 incidents) or `confirmed` (3+ incidents).
+    </ResponseField>
+    
+    <ResponseField name="incidents" type="object[]" required>
+      Array of individual incident records.
+      
+      <Expandable title="properties">
+        <ResponseField name="diaryEntryId" type="string" required>
+          Reference to the diary entry or direct incident ID.
+        </ResponseField>
+        
+        <ResponseField name="date" type="string" required>
+          Date of the incident (ISO date format: YYYY-MM-DD).
+        </ResponseField>
+        
+        <ResponseField name="symptomTypes" type="string[]" required>
+          Array of symptom types experienced. Possible values: `bloating`, `gas`, `cramps`, `nausea`, `diarrhea`, `constipation`, `reflux`, `fatigue`, `headache`, `brain_fog`, `other`.
+        </ResponseField>
+        
+        <ResponseField name="intensity" type="number" required>
+          Symptom intensity on a scale of 1-5.
+        </ResponseField>
+        
+        <ResponseField name="notes" type="string">
+          Optional notes about the incident (max 500 characters).
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+    
+    <ResponseField name="createdAt" type="string" required>
+      Timestamp when the record was created.
+    </ResponseField>
+    
+    <ResponseField name="updatedAt" type="string" required>
+      Timestamp when the record was last updated.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<RequestExample>
+
+```bash cURL
+curl --request GET \
+  --url https://api.ceboelha.com/problematic-foods \
+  --header 'Authorization: Bearer YOUR_TOKEN'
+```
+
+```javascript JavaScript
+const response = await fetch('https://api.ceboelha.com/problematic-foods', {
+  method: 'GET',
+  headers: {
+    'Authorization': 'Bearer YOUR_TOKEN'
+  }
+});
+
+const data = await response.json();
+```
+
+```python Python
+import requests
+
+response = requests.get(
+    'https://api.ceboelha.com/problematic-foods',
+    headers={'Authorization': 'Bearer YOUR_TOKEN'}
+)
+
+data = response.json()
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json 200
+{
+  "success": true,
+  "data": [
+    {
+      "_id": "507f1f77bcf86cd799439011",
+      "userId": "507f191e810c19729de860ea",
+      "foodId": 1234,
+      "foodName": "Onion",
+      "totalIncidents": 3,
+      "lastIncident": "2024-03-15",
+      "status": "confirmed",
+      "incidents": [
+        {
+          "diaryEntryId": "507f1f77bcf86cd799439012",
+          "date": "2024-03-15",
+          "symptomTypes": ["bloating", "gas", "cramps"],
+          "intensity": 4,
+          "notes": "Ate raw onion in salad, symptoms within 2 hours"
+        },
+        {
+          "diaryEntryId": "507f1f77bcf86cd799439013",
+          "date": "2024-03-10",
+          "symptomTypes": ["bloating", "gas"],
+          "intensity": 3
+        },
+        {
+          "diaryEntryId": "507f1f77bcf86cd799439014",
+          "date": "2024-03-05",
+          "symptomTypes": ["bloating"],
+          "intensity": 2
+        }
+      ],
+      "createdAt": "2024-03-05T10:30:00.000Z",
+      "updatedAt": "2024-03-15T14:20:00.000Z"
+    }
+  ]
+}
+```
+
+</ResponseExample>
+
+## Notes
+
+- Results are sorted by `lastIncident` in descending order (most recent first)
+- Status automatically changes to `confirmed` after 3 or more incidents
+- Each user can only have one record per `foodId` (enforced by unique compound index)

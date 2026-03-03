@@ -1,0 +1,751 @@
+---
+title: Error Handling
+description: Standardized error responses with detailed codes and environment-aware stack traces
+---
+
+## Overview
+
+Ceboelha API uses a consistent error handling system that:
+
+- **Standardizes responses**: All errors follow the same JSON structure
+- **Provides error codes**: Machine-readable error codes for client logic
+- **Includes helpful messages**: User-friendly messages in Portuguese
+- **Environment-aware**: Stack traces in development, clean messages in production
+- **Type-safe**: Custom error classes extend a base `AppError` class
+
+## Error Response Format
+
+All error responses follow this structure:
+
+```json
+{
+  "success": false,
+  "error": "ValidationError",
+  "code": "VALIDATION_ERROR",
+  "message": "Senha deve ter no mínimo 8 caracteres",
+  "stack": "Error: ... (only in development)"
+}
+```
+
+<ParamField path="success" type="boolean" default="false">
+  Always `false` for error responses
+</ParamField>
+
+<ParamField path="error" type="string" required>
+  Error class name (e.g., `"ValidationError"`, `"UnauthorizedError"`)
+</ParamField>
+
+<ParamField path="code" type="string" required>
+  Machine-readable error code (e.g., `"VALIDATION_ERROR"`, `"UNAUTHORIZED"`)
+</ParamField>
+
+<ParamField path="message" type="string" required>
+  Human-readable error message in Portuguese
+</ParamField>
+
+<ParamField path="stack" type="string">
+  Stack trace (only included in development mode)
+</ParamField>
+
+## Error Classes
+
+All custom errors extend the base `AppError` class:
+
+### Base AppError
+
+```typescript
+// errors/index.ts:5-15
+export class AppError extends Error {
+  constructor(
+    public message: string,
+    public statusCode: number = 500,
+    public code?: string
+  ) {
+    super(message)
+    this.name = 'AppError'
+    Error.captureStackTrace(this, this.constructor)
+  }
+}
+```
+
+### NotFoundError (404)
+
+Used when a resource doesn't exist:
+
+```typescript
+// errors/index.ts:17-22
+export class NotFoundError extends AppError {
+  constructor(resource: string = 'Recurso') {
+    super(`${resource} não encontrado`, 404, 'NOT_FOUND')
+    this.name = 'NotFoundError'
+  }
+}
+```
+
+**Example Usage:**
+
+```typescript
+const entry = await DiaryEntry.findById(id)
+if (!entry) {
+  throw new NotFoundError('Entrada do diário')
+}
+// Returns: "Entrada do diário não encontrado" (404)
+```
+
+### UnauthorizedError (401)
+
+Used when authentication fails:
+
+```typescript
+// errors/index.ts:24-29
+export class UnauthorizedError extends AppError {
+  constructor(message: string = 'Não autorizado') {
+    super(message, 401, 'UNAUTHORIZED')
+    this.name = 'UnauthorizedError'
+  }
+}
+```
+
+**Common Cases:**
+- Invalid credentials: `"E-mail ou senha inválidos"`
+- Expired token: `"Token expirado ou inválido"`
+- Missing token: `"Autenticação necessária"`
+
+### ForbiddenError (403)
+
+Used when user lacks permissions:
+
+```typescript
+// errors/index.ts:31-36
+export class ForbiddenError extends AppError {
+  constructor(message: string = 'Acesso negado') {
+    super(message, 403, 'FORBIDDEN')
+    this.name = 'ForbiddenError'
+  }
+}
+```
+
+**Example:**
+
+```typescript
+if (!auth.isAdmin) {
+  throw new ForbiddenError('Acesso restrito a administradores')
+}
+```
+
+### ValidationError (400)
+
+Used for invalid input data:
+
+```typescript
+// errors/index.ts:38-43
+export class ValidationError extends AppError {
+  constructor(message: string = 'Dados inválidos') {
+    super(message, 400, 'VALIDATION_ERROR')
+    this.name = 'ValidationError'
+  }
+}
+```
+
+**Example:**
+
+```typescript
+const passwordError = validatePasswordStrength(password)
+if (passwordError) {
+  throw new ValidationError(passwordError)
+}
+// Returns: "Senha deve conter pelo menos uma letra maiúscula" (400)
+```
+
+### ConflictError (409)
+
+Used when a resource already exists:
+
+```typescript
+// errors/index.ts:45-50
+export class ConflictError extends AppError {
+  constructor(message: string = 'Conflito de dados') {
+    super(message, 409, 'CONFLICT')
+    this.name = 'ConflictError'
+  }
+}
+```
+
+**Example:**
+
+```typescript
+const existingUser = await User.findOne({ email })
+if (existingUser) {
+  throw new ConflictError('Este e-mail já está cadastrado')
+}
+```
+
+### RateLimitError (429)
+
+Used when rate limits are exceeded:
+
+```typescript
+// errors/index.ts:52-57
+export class RateLimitError extends AppError {
+  constructor(message: string = 'Muitas requisições. Tente novamente mais tarde.') {
+    super(message, 429, 'RATE_LIMIT')
+    this.name = 'RateLimitError'
+  }
+}
+```
+
+**Example:**
+
+```typescript
+if (entry.count > maxRequests) {
+  throw new RateLimitError(
+    'Muitas requisições. Aguarde um momento e tente novamente.'
+  )
+}
+```
+
+See [Rate Limiting](/concepts/rate-limiting) for more details.
+
+## HTTP Status Codes
+
+Error classes map to standard HTTP status codes:
+
+| Error Class | Status Code | Use Case |
+|-------------|-------------|----------|
+| `ValidationError` | 400 Bad Request | Invalid input, failed validation |
+| `UnauthorizedError` | 401 Unauthorized | Missing or invalid credentials |
+| `ForbiddenError` | 403 Forbidden | Valid credentials but insufficient permissions |
+| `NotFoundError` | 404 Not Found | Resource doesn't exist |
+| `ConflictError` | 409 Conflict | Resource already exists (e.g., duplicate email) |
+| `RateLimitError` | 429 Too Many Requests | Rate limit or account lockout exceeded |
+| `AppError` | 500 Internal Server Error | Generic server error |
+
+## Error Handler Middleware
+
+The global error handler catches and formats all errors:
+
+```typescript
+// error-handler.ts:30-126
+export const errorHandler = new Elysia({ name: 'error-handler' })
+  .onError({ as: 'global' }, ({ error, code, set }) => {
+    // Log in development
+    if (env.IS_DEV) {
+      console.error('❌ Error:', error)
+    }
+
+    // Handle known AppError instances
+    if (error instanceof AppError) {
+      set.status = error.statusCode
+
+      const response: ErrorResponse = {
+        success: false,
+        error: error.name,
+        code: error.code,
+        message: error.message,
+      }
+
+      // Include stack trace in development
+      if (env.IS_DEV && error.stack) {
+        response.stack = error.stack
+      }
+
+      return response
+    }
+
+    // Handle Elysia validation errors
+    if (code === 'VALIDATION') {
+      set.status = 400
+      // ... extract validation message
+      return {
+        success: false,
+        error: 'ValidationError',
+        code: 'VALIDATION_ERROR',
+        message,
+      }
+    }
+
+    // Handle 404 Not Found
+    if (code === 'NOT_FOUND') {
+      set.status = 404
+      return {
+        success: false,
+        error: 'NotFoundError',
+        code: 'NOT_FOUND',
+        message: 'Endpoint não encontrado',
+      }
+    }
+
+    // Unknown errors → 500
+    set.status = 500
+    return {
+      success: false,
+      error: 'InternalServerError',
+      code: 'INTERNAL_ERROR',
+      message: env.IS_PROD
+        ? 'Erro interno do servidor'
+        : error.message || 'Erro desconhecido',
+    }
+  })
+```
+
+### Elysia Framework Errors
+
+The handler also processes Elysia's built-in error codes:
+
+**`VALIDATION`** - Schema validation failed:
+
+```json
+{
+  "success": false,
+  "error": "ValidationError",
+  "code": "VALIDATION_ERROR",
+  "message": "Expected string, received number"
+}
+```
+
+**`NOT_FOUND`** - Route doesn't exist:
+
+```json
+{
+  "success": false,
+  "error": "NotFoundError",
+  "code": "NOT_FOUND",
+  "message": "Endpoint não encontrado"
+}
+```
+
+**`PARSE`** - Request body parsing failed:
+
+```json
+{
+  "success": false,
+  "error": "ParseError",
+  "code": "PARSE_ERROR",
+  "message": "Erro ao processar requisição"
+}
+```
+
+## Environment-Specific Behavior
+
+### Development Mode
+
+```typescript
+if (env.IS_DEV) {
+  console.error('❌ Error:', error)
+}
+```
+
+**Features:**
+- Errors logged to console with full details
+- Stack traces included in response
+- Original error messages preserved
+
+**Example Response:**
+
+```json
+{
+  "success": false,
+  "error": "ValidationError",
+  "code": "VALIDATION_ERROR",
+  "message": "Password must contain at least one uppercase letter",
+  "stack": "ValidationError: Password must contain...\n    at validatePasswordStrength (/src/auth/auth.schemas.ts:45:11)\n    at authService.register (/src/auth/auth.service.ts:179:28)"
+}
+```
+
+### Production Mode
+
+```typescript
+message: env.IS_PROD
+  ? 'Erro interno do servidor'
+  : error.message
+```
+
+**Features:**
+- No console logging (use proper logging service)
+- No stack traces in responses
+- Generic messages for 500 errors to prevent information leakage
+
+**Example Response:**
+
+```json
+{
+  "success": false,
+  "error": "InternalServerError",
+  "code": "INTERNAL_ERROR",
+  "message": "Erro interno do servidor"
+}
+```
+
+<Note>
+Known errors (ValidationError, UnauthorizedError, etc.) still return their specific messages in production, only unexpected 500 errors are masked.
+</Note>
+
+## Client Error Handling
+
+### JavaScript/TypeScript
+
+```typescript
+try {
+  const response = await fetch('/api/auth/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password })
+  })
+
+  const data = await response.json()
+
+  if (!data.success) {
+    // Handle error based on code
+    switch (data.code) {
+      case 'VALIDATION_ERROR':
+        console.error('Invalid input:', data.message)
+        break
+      case 'UNAUTHORIZED':
+        console.error('Login failed:', data.message)
+        break
+      case 'RATE_LIMIT':
+        console.error('Too many attempts:', data.message)
+        // Wait and retry
+        break
+      default:
+        console.error('Unknown error:', data.message)
+    }
+    throw new Error(data.message)
+  }
+
+  // Success
+  return data.data
+} catch (error) {
+  console.error('Request failed:', error)
+}
+```
+
+### React Example
+
+```typescript
+import { useState } from 'react'
+
+function LoginForm() {
+  const [error, setError] = useState<string | null>(null)
+
+  const handleSubmit = async (email: string, password: string) => {
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      })
+
+      const data = await response.json()
+
+      if (!data.success) {
+        // Show user-friendly error
+        setError(data.message)
+        
+        // Special handling for rate limits
+        if (data.code === 'RATE_LIMIT') {
+          // Disable form for a period
+          setTimeout(() => setError(null), 15 * 60 * 1000)
+        }
+        return
+      }
+
+      // Login successful
+      window.location.href = '/dashboard'
+    } catch (err) {
+      setError('Erro de conexão. Tente novamente.')
+    }
+  }
+
+  return (
+    <form>
+      {error && <div className="error">{error}</div>}
+      {/* form fields */}
+    </form>
+  )
+}
+```
+
+## Common Error Scenarios
+
+### Invalid Token
+
+**Request:**
+```bash
+GET /diary/entries
+Authorization: Bearer invalid-token
+```
+
+**Response:**
+```json
+{
+  "success": false,
+  "error": "UnauthorizedError",
+  "code": "UNAUTHORIZED",
+  "message": "Token expirado ou inválido"
+}
+```
+
+**Client Action:** Redirect to login or refresh token
+
+### Weak Password
+
+**Request:**
+```bash
+POST /auth/register
+{"email": "user@example.com", "password": "weak", "name": "User"}
+```
+
+**Response:**
+```json
+{
+  "success": false,
+  "error": "ValidationError",
+  "code": "VALIDATION_ERROR",
+  "message": "Senha deve ter no mínimo 8 caracteres"
+}
+```
+
+**Client Action:** Show inline validation error
+
+### Account Locked
+
+**Request:**
+```bash
+POST /auth/login
+{"email": "user@example.com", "password": "wrong-password"}
+# (6th failed attempt)
+```
+
+**Response:**
+```json
+{
+  "success": false,
+  "error": "RateLimitError",
+  "code": "RATE_LIMIT",
+  "message": "Conta bloqueada temporariamente. Tente novamente em 15 minutos."
+}
+```
+
+**Client Action:** Show countdown timer, disable form
+
+### Resource Not Found
+
+**Request:**
+```bash
+GET /diary/entries/999999999999999999999999
+```
+
+**Response:**
+```json
+{
+  "success": false,
+  "error": "NotFoundError",
+  "code": "NOT_FOUND",
+  "message": "Entrada do diário não encontrado"
+}
+```
+
+**Client Action:** Show 404 page or redirect to list
+
+### Permission Denied
+
+**Request:**
+```bash
+DELETE /admin/users/123
+Authorization: Bearer <user-token>
+# User tries to access admin endpoint
+```
+
+**Response:**
+```json
+{
+  "success": false,
+  "error": "ForbiddenError",
+  "code": "FORBIDDEN",
+  "message": "Acesso restrito a administradores"
+}
+```
+
+**Client Action:** Show "Access Denied" message
+
+## Best Practices
+
+### For API Developers
+
+1. **Use specific error classes:**
+   ```typescript
+   // ❌ Don't
+   throw new Error('User not found')
+   
+   // ✅ Do
+   throw new NotFoundError('Usuário')
+   ```
+
+2. **Provide helpful messages:**
+   ```typescript
+   // ❌ Don't
+   throw new ValidationError('Invalid')
+   
+   // ✅ Do
+   throw new ValidationError('E-mail deve ser um endereço válido')
+   ```
+
+3. **Don't leak sensitive info:**
+   ```typescript
+   // ❌ Don't
+   throw new UnauthorizedError(`User ${email} not found in database`)
+   
+   // ✅ Do (prevents email enumeration)
+   throw new UnauthorizedError('E-mail ou senha inválidos')
+   ```
+
+4. **Use error codes consistently:**
+   ```typescript
+   // Always use the same code for the same error type
+   throw new ValidationError('Invalid email')  // Always VALIDATION_ERROR
+   ```
+
+### For API Clients
+
+1. **Check `success` field first:**
+   ```typescript
+   if (!response.success) {
+     // Handle error
+   }
+   ```
+
+2. **Use error codes, not messages:**
+   ```typescript
+   // ❌ Don't (messages may change)
+   if (error.message.includes('senha')) { }
+   
+   // ✅ Do (codes are stable)
+   if (error.code === 'VALIDATION_ERROR') { }
+   ```
+
+3. **Handle all expected error codes:**
+   ```typescript
+   switch (error.code) {
+     case 'VALIDATION_ERROR': /* ... */ break
+     case 'UNAUTHORIZED': /* ... */ break
+     case 'RATE_LIMIT': /* ... */ break
+     default: /* Generic error handler */
+   }
+   ```
+
+4. **Display user-friendly messages:**
+   ```typescript
+   // The API already provides Portuguese messages
+   setErrorMessage(error.message)
+   ```
+
+## Logging and Monitoring
+
+### Development Logging
+
+```typescript
+if (env.IS_DEV) {
+  console.error('❌ Error:', error)
+}
+```
+
+All errors are logged to the console with full stack traces.
+
+### Production Logging
+
+For production, integrate a proper logging service:
+
+```typescript
+// Example with Sentry
+import * as Sentry from '@sentry/node'
+
+export const errorHandler = new Elysia({ name: 'error-handler' })
+  .onError({ as: 'global' }, ({ error, code, set }) => {
+    // Log to Sentry in production
+    if (env.IS_PROD && error instanceof AppError && error.statusCode === 500) {
+      Sentry.captureException(error)
+    }
+
+    // ... rest of error handling
+  })
+```
+
+### Error Metrics
+
+Track error rates by type:
+
+```typescript
+import { metrics } from './monitoring'
+
+if (error instanceof AppError) {
+  metrics.increment(`errors.${error.code}`, {
+    status: error.statusCode,
+    endpoint: request.url
+  })
+}
+```
+
+## Testing Error Handling
+
+### Unit Tests
+
+```typescript
+import { describe, expect, it } from 'bun:test'
+import { authService } from './auth.service'
+import { ValidationError, ConflictError } from '@/shared/errors'
+
+describe('Auth Service', () => {
+  it('should throw ValidationError for weak password', async () => {
+    await expect(
+      authService.register({
+        email: 'test@example.com',
+        password: 'weak',
+        name: 'Test User'
+      })
+    ).rejects.toThrow(ValidationError)
+  })
+
+  it('should throw ConflictError for duplicate email', async () => {
+    // Register once
+    await authService.register({ email: 'test@example.com', password: 'SecurePass123!', name: 'User' })
+    
+    // Try again
+    await expect(
+      authService.register({ email: 'test@example.com', password: 'SecurePass123!', name: 'User' })
+    ).rejects.toThrow(ConflictError)
+  })
+})
+```
+
+### Integration Tests
+
+```typescript
+import { describe, expect, it } from 'bun:test'
+import { app } from './app'
+
+describe('Error Handling', () => {
+  it('should return 401 for invalid token', async () => {
+    const response = await app.handle(
+      new Request('http://localhost/diary/entries', {
+        headers: { 'Authorization': 'Bearer invalid-token' }
+      })
+    )
+
+    expect(response.status).toBe(401)
+    
+    const data = await response.json()
+    expect(data.success).toBe(false)
+    expect(data.code).toBe('UNAUTHORIZED')
+  })
+
+  it('should return 404 for unknown route', async () => {
+    const response = await app.handle(
+      new Request('http://localhost/unknown-route')
+    )
+
+    expect(response.status).toBe(404)
+    expect(data.code).toBe('NOT_FOUND')
+  })
+})
+```

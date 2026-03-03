@@ -1,0 +1,207 @@
+---
+title: Create Symptom Entry
+description: Log a new symptom entry to track IBS and digestive issues
+---
+
+## Endpoint
+
+```
+POST /diary/symptom
+```
+
+## Authentication
+
+This endpoint requires authentication via Bearer token.
+
+```bash
+Authorization: Bearer <token>
+```
+
+## Request Body
+
+<ParamField body="date" type="string" required>
+  Date of the symptom in YYYY-MM-DD format (e.g., "2024-03-15")
+</ParamField>
+
+<ParamField body="symptom" type="object" required>
+  Symptom data object
+  
+  <ParamField body="type" type="string" required>
+    Type of symptom. Options: `bloating`, `gas`, `cramps`, `nausea`, `diarrhea`, `constipation`, `reflux`, `fatigue`, `headache`, `brain_fog`, `other`
+  </ParamField>
+  
+  <ParamField body="intensity" type="number" required>
+    Intensity level from 1 (mild) to 5 (severe)
+  </ParamField>
+  
+  <ParamField body="time" type="string" required>
+    Time when the symptom occurred in HH:MM format (e.g., "14:30")
+  </ParamField>
+  
+  <ParamField body="duration" type="number">
+    Duration of the symptom in minutes
+  </ParamField>
+  
+  <ParamField body="notes" type="string">
+    Additional notes about the symptom (max 500 characters)
+  </ParamField>
+</ParamField>
+
+## Response
+
+<ResponseField name="success" type="boolean">
+  Indicates if the symptom was successfully logged
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  The created diary entry
+  
+  <ResponseField name="_id" type="string">
+    Entry ID (MongoDB ObjectId)
+  </ResponseField>
+  
+  <ResponseField name="userId" type="string">
+    User ID who created the entry
+  </ResponseField>
+  
+  <ResponseField name="date" type="string">
+    Entry date in YYYY-MM-DD format
+  </ResponseField>
+  
+  <ResponseField name="type" type="string">
+    Entry type (always "symptom" for this endpoint)
+  </ResponseField>
+  
+  <ResponseField name="symptom" type="object">
+    Complete symptom data including all provided fields
+  </ResponseField>
+  
+  <ResponseField name="createdAt" type="string">
+    Timestamp when the entry was created
+  </ResponseField>
+  
+  <ResponseField name="updatedAt" type="string">
+    Timestamp when the entry was last updated
+  </ResponseField>
+</ResponseField>
+
+## Examples
+
+### Log a bloating symptom
+
+```bash
+curl -X POST "https://api.ceboelha.com/diary/symptom" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "date": "2024-03-15",
+    "symptom": {
+      "type": "bloating",
+      "intensity": 3,
+      "time": "14:30",
+      "duration": 45,
+      "notes": "Começou após o almoço, sentindo desconforto abdominal"
+    }
+  }'
+```
+
+### Log severe cramps
+
+```bash
+curl -X POST "https://api.ceboelha.com/diary/symptom" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "date": "2024-03-15",
+    "symptom": {
+      "type": "cramps",
+      "intensity": 5,
+      "time": "16:00",
+      "duration": 20,
+      "notes": "Dor intensa, precisei parar o que estava fazendo"
+    }
+  }'
+```
+
+### Log mild gas without duration
+
+```bash
+curl -X POST "https://api.ceboelha.com/diary/symptom" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "date": "2024-03-15",
+    "symptom": {
+      "type": "gas",
+      "intensity": 2,
+      "time": "10:15"
+    }
+  }'
+```
+
+### Log fatigue related to digestive issues
+
+```bash
+curl -X POST "https://api.ceboelha.com/diary/symptom" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "date": "2024-03-15",
+    "symptom": {
+      "type": "fatigue",
+      "intensity": 4,
+      "time": "15:00",
+      "duration": 120,
+      "notes": "Cansaço extremo após os sintomas digestivos"
+    }
+  }'
+```
+
+<ResponseExample>
+```json
+{
+  "success": true,
+  "data": {
+    "_id": "65f1a2b3c4d5e6f7a8b9c0d2",
+    "userId": "65e1a2b3c4d5e6f7a8b9c0d1",
+    "date": "2024-03-15",
+    "type": "symptom",
+    "symptom": {
+      "type": "bloating",
+      "intensity": 3,
+      "time": "14:30",
+      "duration": 45,
+      "notes": "Começou após o almoço, sentindo desconforto abdominal"
+    },
+    "createdAt": "2024-03-15T14:32:10.000Z",
+    "updatedAt": "2024-03-15T14:32:10.000Z"
+  }
+}
+```
+</ResponseExample>
+
+## Symptom Types
+
+| Type | Description |
+|------|-------------|
+| `bloating` | Abdominal bloating and distension |
+| `gas` | Flatulence and gas |
+| `cramps` | Abdominal cramps and pain |
+| `nausea` | Feeling of nausea |
+| `diarrhea` | Loose or watery stools |
+| `constipation` | Difficulty passing stools |
+| `reflux` | Acid reflux or heartburn |
+| `fatigue` | Tiredness or lack of energy |
+| `headache` | Headache |
+| `brain_fog` | Mental cloudiness or difficulty concentrating |
+| `other` | Other symptoms not listed |
+
+## Intensity Levels
+
+| Level | Description |
+|-------|-------------|
+| 1 | Very mild - barely noticeable |
+| 2 | Mild - noticeable but not bothersome |
+| 3 | Moderate - somewhat bothersome |
+| 4 | Severe - very bothersome, affecting daily activities |
+| 5 | Very severe - debilitating, unable to function normally |

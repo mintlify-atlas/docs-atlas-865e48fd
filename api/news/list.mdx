@@ -1,0 +1,263 @@
+---
+title: 'List News Articles'
+description: 'Get paginated list of published news articles with optional filters'
+---
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -X GET 'https://api.ceboelha.com/insights/news?page=1&limit=10&category=recipe' \
+  -H 'Content-Type: application/json'
+```
+
+```javascript JavaScript
+const response = await fetch('https://api.ceboelha.com/insights/news?page=1&limit=10', {
+  method: 'GET',
+  headers: {
+    'Content-Type': 'application/json'
+  }
+});
+
+const data = await response.json();
+```
+
+```python Python
+import requests
+
+response = requests.get(
+    'https://api.ceboelha.com/insights/news',
+    params={'page': 1, 'limit': 10}
+)
+
+data = response.json()
+```
+</CodeGroup>
+
+## Query Parameters
+
+<ParamField query="page" type="integer" default="1">
+  Page number for pagination (starts at 1)
+</ParamField>
+
+<ParamField query="limit" type="integer" default="10">
+  Number of articles per page (1-100)
+</ParamField>
+
+<ParamField query="category" type="string">
+  Filter by article category
+  
+  Options: `recipe`, `article`, `tip`, `wellness`, `news`
+</ParamField>
+
+<ParamField query="tag" type="string">
+  Filter by tag (e.g., "low-fodmap", "breakfast", "IBS")
+</ParamField>
+
+<ParamField query="featured" type="boolean">
+  Filter for featured articles only
+  
+  Options: `true`, `false`
+</ParamField>
+
+<ParamField query="search" type="string">
+  Search query to filter articles by title, excerpt, content, or tags
+</ParamField>
+
+## Response
+
+<ResponseField name="success" type="boolean" required>
+  Indicates if the request was successful
+</ResponseField>
+
+<ResponseField name="data" type="array" required>
+  Array of article objects
+  
+  <Expandable title="Article Object">
+    <ResponseField name="id" type="integer">
+      Unique article ID
+    </ResponseField>
+    
+    <ResponseField name="title" type="string">
+      Article title
+    </ResponseField>
+    
+    <ResponseField name="excerpt" type="string">
+      Short summary/preview of the article
+    </ResponseField>
+    
+    <ResponseField name="image_url" type="string">
+      URL of the article cover image
+    </ResponseField>
+    
+    <ResponseField name="category" type="string">
+      Article category: `recipe`, `article`, `tip`, `wellness`, or `news`
+    </ResponseField>
+    
+    <ResponseField name="tags" type="array">
+      Array of tag strings
+    </ResponseField>
+    
+    <ResponseField name="author" type="object">
+      Author information
+      
+      <Expandable title="Author Object">
+        <ResponseField name="name" type="string">
+          Author's name
+        </ResponseField>
+        
+        <ResponseField name="avatar" type="string">
+          Author's avatar URL
+        </ResponseField>
+        
+        <ResponseField name="bio" type="string">
+          Author's bio
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+    
+    <ResponseField name="publishedAt" type="string">
+      ISO 8601 timestamp when article was published
+    </ResponseField>
+    
+    <ResponseField name="updatedAt" type="string">
+      ISO 8601 timestamp when article was last updated
+    </ResponseField>
+    
+    <ResponseField name="featured" type="boolean">
+      Whether article is featured on homepage
+    </ResponseField>
+    
+    <ResponseField name="views" type="integer">
+      Number of views
+    </ResponseField>
+    
+    <ResponseField name="likes" type="integer">
+      Number of likes
+    </ResponseField>
+    
+    <ResponseField name="recipe" type="object">
+      Recipe details (only present if category is "recipe")
+      
+      <Expandable title="Recipe Object">
+        <ResponseField name="prep_time" type="integer">
+          Preparation time in minutes
+        </ResponseField>
+        
+        <ResponseField name="cook_time" type="integer">
+          Cooking time in minutes
+        </ResponseField>
+        
+        <ResponseField name="servings" type="integer">
+          Number of servings
+        </ResponseField>
+        
+        <ResponseField name="difficulty" type="string">
+          Recipe difficulty: `easy`, `medium`, or `hard`
+        </ResponseField>
+        
+        <ResponseField name="ingredients" type="array">
+          Array of ingredient strings
+        </ResponseField>
+        
+        <ResponseField name="instructions" type="array">
+          Array of instruction strings
+        </ResponseField>
+        
+        <ResponseField name="fodmap_friendly" type="boolean">
+          Whether recipe is FODMAP friendly
+        </ResponseField>
+        
+        <ResponseField name="fodmap_phase" type="string">
+          Suitable FODMAP phase: `elimination`, `reintroduction`, or `maintenance`
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="pagination" type="object" required>
+  Pagination information
+  
+  <Expandable title="Pagination Object">
+    <ResponseField name="page" type="integer">
+      Current page number
+    </ResponseField>
+    
+    <ResponseField name="limit" type="integer">
+      Items per page
+    </ResponseField>
+    
+    <ResponseField name="total" type="integer">
+      Total number of articles
+    </ResponseField>
+    
+    <ResponseField name="totalPages" type="integer">
+      Total number of pages
+    </ResponseField>
+    
+    <ResponseField name="hasMore" type="boolean">
+      Whether there are more pages available
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Response Example
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": 1,
+      "title": "Low-FODMAP Breakfast Smoothie Bowl",
+      "excerpt": "Start your day with this delicious and gut-friendly smoothie bowl",
+      "image_url": "https://example.com/images/smoothie-bowl.jpg",
+      "category": "recipe",
+      "tags": ["breakfast", "low-fodmap", "smoothie"],
+      "author": {
+        "name": "Dr. Sarah Johnson",
+        "avatar": "https://example.com/avatars/sarah.jpg",
+        "bio": "Nutritionist specializing in FODMAP diet"
+      },
+      "publishedAt": "2024-03-01T10:00:00Z",
+      "updatedAt": "2024-03-01T10:00:00Z",
+      "featured": true,
+      "views": 1234,
+      "likes": 89,
+      "recipe": {
+        "prep_time": 10,
+        "cook_time": 0,
+        "servings": 2,
+        "difficulty": "easy",
+        "ingredients": [
+          "1 banana",
+          "1 cup blueberries",
+          "1/2 cup lactose-free yogurt",
+          "1 tbsp chia seeds"
+        ],
+        "instructions": [
+          "Blend banana, blueberries, and yogurt until smooth",
+          "Pour into bowl and top with chia seeds"
+        ],
+        "fodmap_friendly": true,
+        "fodmap_phase": "elimination"
+      }
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 10,
+    "total": 45,
+    "totalPages": 5,
+    "hasMore": true
+  }
+}
+```
+
+## Notes
+
+- Articles are only returned if their status is `published`
+- Results are sorted by `publishedAt` date in descending order (newest first)
+- The `content` field is not included in list responses for performance. Use the [Get Article](/api/news/get-article) endpoint to fetch full content
+- No authentication is required for this endpoint
